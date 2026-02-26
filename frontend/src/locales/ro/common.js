@@ -291,6 +291,11 @@ const TRANSLATIONS = {
         only: "doar",
         "desc-end": "dacă contextul documentului este găsit.",
       },
+      agent: {
+        title: "Agent",
+        agent_mode: "Agent Mode",
+        desc: "Automatically uses the agent for all messages without requiring @agent prefix.",
+      },
     },
     history: {
       title: "Istoric chat",

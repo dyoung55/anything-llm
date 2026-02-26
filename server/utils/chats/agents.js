@@ -13,7 +13,10 @@ async function grepAgents({
   thread = null,
 }) {
   const agentHandles = WorkspaceAgentInvocation.parseAgents(message);
-  if (agentHandles.length > 0) {
+  // If workspace is in agent mode, always invoke agent regardless of @agent prefix
+  const shouldInvokeAgent = agentHandles.length > 0 || workspace?.chatMode === "agent";
+  
+  if (shouldInvokeAgent) {
     const { invocation: newInvocation } = await WorkspaceAgentInvocation.new({
       prompt: message,
       workspace: workspace,
@@ -50,20 +53,23 @@ async function grepAgents({
     });
 
     // Close HTTP stream-able chunk response method because we will swap to agents now.
-    writeResponseChunk(response, {
-      id: uuid,
-      type: "statusResponse",
-      textResponse: `${pluralize(
-        "Agent",
-        agentHandles.length
-      )} ${agentHandles.join(
-        ", "
-      )} invoked.\nSwapping over to agent chat. Type /exit to exit agent execution loop early.`,
-      sources: [],
-      close: true,
-      error: null,
-      animate: true,
-    });
+    // Only show the status message if not in agent mode (to avoid repetitive messages)
+    if (workspace?.chatMode !== "agent") {
+      writeResponseChunk(response, {
+        id: uuid,
+        type: "statusResponse",
+        textResponse: `${pluralize(
+          "Agent",
+          agentHandles.length
+        )} ${agentHandles.join(
+          ", "
+        )} invoked.\nSwapping over to agent chat. Type /exit to exit agent execution loop early.`,
+        sources: [],
+        close: true,
+        error: null,
+        animate: true,
+      });
+    }
     return true;
   }
 

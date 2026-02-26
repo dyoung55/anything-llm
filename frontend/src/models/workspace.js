@@ -118,6 +118,7 @@ const Workspace = {
     workspaceSlug,
     threadSlug = null,
     prompt,
+    mode = "chat",
     chatHandler,
     attachments = [],
   }) {

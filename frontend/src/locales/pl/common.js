@@ -289,6 +289,11 @@ const TRANSLATIONS = {
         "desc-end":
           "na podstawie znalezionego kontekstu (dokumenty, źródła danych) - w przeciwnym razie odmówi odpowiedzi.",
       },
+      agent: {
+        title: "Agent",
+        agent_mode: "Agent Mode",
+        desc: "Automatically uses the agent for all messages without requiring @agent prefix.",
+      },
     },
     history: {
       title: "Historia czatu",

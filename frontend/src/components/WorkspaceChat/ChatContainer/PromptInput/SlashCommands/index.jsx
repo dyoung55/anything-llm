@@ -38,6 +38,7 @@ export function SlashCommands({
   setShowing,
   sendCommand,
   promptRef,
+  workspace,
   centered = false,
 }) {
   const cmdRef = useRef(null);
@@ -71,12 +72,21 @@ export function SlashCommands({
           ref={cmdRef}
           className="w-[600px] bg-theme-action-menu-bg rounded-2xl flex shadow flex-col justify-start items-start gap-2.5 p-2 overflow-y-auto max-h-[200px] no-scroll"
         >
-          <ResetCommand sendCommand={sendCommand} setShowing={setShowing} />
-          <EndAgentSession sendCommand={sendCommand} setShowing={setShowing} />
+          <ResetCommand
+            sendCommand={sendCommand}
+            setShowing={setShowing}
+            workspace={workspace}
+          />
+          <EndAgentSession
+            sendCommand={sendCommand}
+            setShowing={setShowing}
+            workspace={workspace}
+          />
           <SlashPresets
             sendCommand={sendCommand}
             setShowing={setShowing}
             promptRef={promptRef}
+            workspace={workspace}
           />
         </div>
       </div>

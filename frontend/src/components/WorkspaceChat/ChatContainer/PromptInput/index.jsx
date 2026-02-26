@@ -44,6 +44,7 @@ export default function PromptInput({
   isStreaming,
   sendCommand,
   attachments = [],
+  workspace,
   centered = false,
   workspaceSlug = null,
   threadSlug = null,
@@ -271,6 +272,7 @@ export default function PromptInput({
         setShowing={setShowSlashCommand}
         sendCommand={sendCommand}
         promptRef={textareaRef}
+        workspace={workspace}
         centered={centered}
       />
       <AvailableAgents

@@ -13,7 +13,7 @@ const {
   sourceIdentifier,
 } = require("./index");
 
-const VALID_CHAT_MODE = ["chat", "query"];
+const VALID_CHAT_MODE = ["chat", "query", "agent"];
 
 async function streamChatWithWorkspace(
   response,

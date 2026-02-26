@@ -198,6 +198,11 @@ const TRANSLATIONS = {
         only: "chỉ",
         "desc-end": "khi tìm thấy ngữ cảnh tài liệu.",
       },
+      agent: {
+        title: "Agent",
+        agent_mode: "Agent Mode",
+        desc: "Automatically uses the agent for all messages without requiring @agent prefix.",
+      },
     },
     history: {
       title: "Lịch sử Trò chuyện",

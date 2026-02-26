@@ -296,6 +296,11 @@ const TRANSLATIONS = {
         only: "pouze",
         "desc-end": "pokud je nalezen kontext dokumentu.",
       },
+      agent: {
+        title: "Agent",
+        agent_mode: "Agent Mode",
+        desc: "Automatically uses the agent for all messages without requiring @agent prefix.",
+      },
     },
     history: {
       title: "Historie chatu",
