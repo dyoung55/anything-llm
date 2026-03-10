@@ -9,15 +9,16 @@ const {
 const { MODEL_MAP } = require("../modelMap");
 
 class MoonshotAiLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.MOONSHOT_AI_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.MOONSHOT_AI_API_KEY;
+    if (!apiKey)
       throw new Error("No Moonshot AI API key was set.");
     this.className = "MoonshotAiLLM";
     const { OpenAI: OpenAIApi } = require("openai");
 
     this.openai = new OpenAIApi({
       baseURL: "https://api.moonshot.ai/v1",
-      apiKey: process.env.MOONSHOT_AI_API_KEY,
+      apiKey: apiKey,
     });
     this.model =
       modelPreference ||

@@ -20,8 +20,9 @@ const cacheFolder = path.resolve(
 class NovitaLLM {
   defaultTimeout = 3_000;
 
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.NOVITA_LLM_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.NOVITA_LLM_API_KEY;
+    if (!apiKey)
       throw new Error("No Novita API key was set.");
 
     this.className = "NovitaLLM";
@@ -29,7 +30,7 @@ class NovitaLLM {
     this.basePath = "https://api.novita.ai/v3/openai";
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
-      apiKey: process.env.NOVITA_LLM_API_KEY ?? null,
+      apiKey: apiKey ?? null,
       defaultHeaders: {
         "HTTP-Referer": "https://anythingllm.com",
         "X-Novita-Source": "anythingllm",

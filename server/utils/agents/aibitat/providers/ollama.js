@@ -16,11 +16,13 @@ class OllamaProvider extends InheritMultiple([Provider, UnTooled]) {
     const {
       // options = {},
       model = null,
+      apiKey = null,
     } = config;
 
     super();
-    const headers = process.env.OLLAMA_AUTH_TOKEN
-      ? { Authorization: `Bearer ${process.env.OLLAMA_AUTH_TOKEN}` }
+    const authToken = apiKey ?? process.env.OLLAMA_AUTH_TOKEN;
+    const headers = authToken
+      ? { Authorization: `Bearer ${authToken}` }
       : {};
     this._client = new Ollama({
       host: process.env.OLLAMA_BASE_PATH,

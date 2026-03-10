@@ -163,6 +163,11 @@ export default function WorkspaceLLMSelection({
         workspace={workspace}
         setHasChanges={setHasChanges}
       />
+      <ApiKeyInput
+        selectedLLM={selectedLLM}
+        workspace={workspace}
+        setHasChanges={setHasChanges}
+      />
     </div>
   );
 }
@@ -217,6 +222,31 @@ function FreeFormLLMInput({ workspace, setHasChanges }) {
         onChange={() => setHasChanges(true)}
         className="border-none bg-theme-settings-input-bg text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
         placeholder="Enter model name exactly as referenced in the API (e.g., gpt-3.5-turbo)"
+      />
+    </div>
+  );
+}
+
+function ApiKeyInput({ selectedLLM, workspace, setHasChanges }) {
+  if (selectedLLM === "default") return null;
+
+  return (
+    <div className="mt-4 flex flex-col gap-y-1">
+      <label className="block input-label">
+        Workspace API Key (Optional)
+      </label>
+      <p className="text-white text-opacity-60 text-xs font-medium py-1.5">
+        Override the system API key for this workspace only. Leave blank to use
+        the system default.
+      </p>
+      <input
+        type="password"
+        name="chatApiKey"
+        defaultValue={workspace?.chatApiKey || ""}
+        onChange={() => setHasChanges(true)}
+        className="border-none bg-theme-settings-input-bg text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
+        placeholder="sk-..."
+        autoComplete="off"
       />
     </div>
   );

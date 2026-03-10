@@ -39,9 +39,13 @@ class AWSBedrockLLM {
    * Initializes the AWS Bedrock LLM connector.
    * @param {object | null} [embedder=null] - An optional embedder instance. Defaults to NativeEmbedder.
    * @param {string | null} [modelPreference=null] - Optional model ID override. Defaults to environment variable.
+   * @param {string | null} [apiKeyOverride=null] - Optional API key override for workspace-specific keys.
    * @throws {Error} If required environment variables are missing or invalid.
    */
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    // Store the API key override for later use
+    this.apiKeyOverride = apiKeyOverride;
+    
     const requiredEnvVars = [
       ...(!["iam_role", "apiKey"].includes(this.authMethod)
         ? [
@@ -56,9 +60,9 @@ class AWSBedrockLLM {
             "AWS_BEDROCK_LLM_SESSION_TOKEN",
           ]
         : []),
-      ...(this.authMethod === "apiKey"
+      ...(this.authMethod === "apiKey" && !apiKeyOverride
         ? [
-            // required for bedrock api key
+            // required for bedrock api key (unless overridden)
             "AWS_BEDROCK_LLM_API_KEY",
           ]
         : []),

@@ -7,15 +7,16 @@ const { writeResponseChunk } = require("../../helpers/chat/responses");
 const { MODEL_MAP } = require("../modelMap");
 
 class SambaNovaLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.SAMBANOVA_LLM_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.SAMBANOVA_LLM_API_KEY;
+    if (!apiKey)
       throw new Error("No SambaNova API key was set.");
     this.className = "SambaNovaLLM";
     const { OpenAI: OpenAIApi } = require("openai");
 
     this.openai = new OpenAIApi({
       baseURL: "https://api.sambanova.ai/v1",
-      apiKey: process.env.SAMBANOVA_LLM_API_KEY,
+      apiKey: apiKey,
     });
     this.model = modelPreference || process.env.SAMBANOVA_LLM_MODEL_PREF;
     this.limits = {

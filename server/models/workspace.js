@@ -48,6 +48,7 @@ const Workspace = {
     "similarityThreshold",
     "chatProvider",
     "chatModel",
+    "chatApiKey",
     "topN",
     "chatMode",
     // "pfpFilename",
@@ -101,6 +102,10 @@ const Workspace = {
       return String(value);
     },
     chatModel: (value) => {
+      if (!value || typeof value !== "string") return null;
+      return String(value);
+    },
+    chatApiKey: (value) => {
       if (!value || typeof value !== "string") return null;
       return String(value);
     },
@@ -240,6 +245,7 @@ const Workspace = {
     if (validatedUpdates?.chatProvider === "default") {
       validatedUpdates.chatProvider = null;
       validatedUpdates.chatModel = null;
+      validatedUpdates.chatApiKey = null;
     }
 
     return this._update(id, validatedUpdates);

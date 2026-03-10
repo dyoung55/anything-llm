@@ -10,11 +10,11 @@ class NovitaProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = "deepseek/deepseek-r1" } = config;
+    const { model = "deepseek/deepseek-r1", apiKey = null } = config;
     super();
     const client = new OpenAI({
       baseURL: "https://api.novita.ai/v3/openai",
-      apiKey: process.env.NOVITA_LLM_API_KEY,
+      apiKey: apiKey ?? process.env.NOVITA_LLM_API_KEY,
       maxRetries: 3,
       defaultHeaders: {
         "HTTP-Referer": "https://anythingllm.com",

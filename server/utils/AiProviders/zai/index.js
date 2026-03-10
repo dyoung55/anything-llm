@@ -8,14 +8,15 @@ const {
 const { MODEL_MAP } = require("../modelMap");
 
 class ZAiLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.ZAI_API_KEY) throw new Error("No Z.AI API key was set.");
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.ZAI_API_KEY;
+    if (!apiKey) throw new Error("No Z.AI API key was set.");
     this.className = "ZAiLLM";
     const { OpenAI: OpenAIApi } = require("openai");
 
     this.openai = new OpenAIApi({
       baseURL: "https://api.z.ai/api/paas/v4",
-      apiKey: process.env.ZAI_API_KEY,
+      apiKey: apiKey,
     });
     this.model = modelPreference || process.env.ZAI_MODEL_PREF || "glm-4.5";
     this.limits = {

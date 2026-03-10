@@ -11,10 +11,10 @@ class LiteLLMProvider extends InheritMultiple([Provider, UnTooled]) {
 
   constructor(config = {}) {
     super();
-    const { model = null } = config;
+    const { model = null, apiKey = null } = config;
     const client = new OpenAI({
       baseURL: process.env.LITE_LLM_BASE_PATH,
-      apiKey: process.env.LITE_LLM_API_KEY ?? null,
+      apiKey: apiKey ?? process.env.LITE_LLM_API_KEY ?? null,
       maxRetries: 3,
     });
 

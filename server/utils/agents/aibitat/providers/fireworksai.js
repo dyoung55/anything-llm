@@ -11,12 +11,12 @@ class FireworksAIProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = "accounts/fireworks/models/llama-v3p1-8b-instruct" } =
+    const { model = "accounts/fireworks/models/llama-v3p1-8b-instruct", apiKey = null } =
       config;
     super();
     const client = new OpenAI({
       baseURL: "https://api.fireworks.ai/inference/v1",
-      apiKey: process.env.FIREWORKS_AI_LLM_API_KEY,
+      apiKey: apiKey ?? process.env.FIREWORKS_AI_LLM_API_KEY,
       maxRetries: 0,
     });
 

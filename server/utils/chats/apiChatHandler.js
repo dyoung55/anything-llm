@@ -206,6 +206,7 @@ async function chatSync({
   const LLMConnector = getLLMProvider({
     provider: workspace?.chatProvider,
     model: workspace?.chatModel,
+    apiKey: workspace?.chatApiKey,
   });
   const VectorDb = getVectorDbClass();
   const messageLimit = workspace?.openAiHistory || 20;
@@ -547,6 +548,7 @@ async function streamChat({
   const LLMConnector = getLLMProvider({
     provider: workspace?.chatProvider,
     model: workspace?.chatModel,
+    apiKey: workspace?.chatApiKey,
   });
 
   const VectorDb = getVectorDbClass();

@@ -11,7 +11,7 @@ const { toValidNumber } = require("../../http");
 const { getAnythingLLMUserAgent } = require("../../../endpoints/utils");
 
 class GenericOpenAiLLM {
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const { OpenAI: OpenAIApi } = require("openai");
     if (!process.env.GENERIC_OPEN_AI_BASE_PATH)
       throw new Error(
@@ -20,9 +20,10 @@ class GenericOpenAiLLM {
 
     this.className = "GenericOpenAiLLM";
     this.basePath = process.env.GENERIC_OPEN_AI_BASE_PATH;
+    const apiKey = apiKeyOverride ?? process.env.GENERIC_OPEN_AI_API_KEY ?? null;
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
-      apiKey: process.env.GENERIC_OPEN_AI_API_KEY ?? null,
+      apiKey: apiKey,
       defaultHeaders: {
         "User-Agent": getAnythingLLMUserAgent(),
         ...GenericOpenAiLLM.parseCustomHeaders(),

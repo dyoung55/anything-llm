@@ -15,12 +15,12 @@ class OllamaAILLM {
   /** @see OllamaAILLM.cacheContextWindows */
   static modelContextWindows = {};
 
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     if (!process.env.OLLAMA_BASE_PATH)
       throw new Error("No Ollama Base Path was set.");
 
     this.className = "OllamaAILLM";
-    this.authToken = process.env.OLLAMA_AUTH_TOKEN;
+    this.authToken = apiKeyOverride || process.env.OLLAMA_AUTH_TOKEN;
     this.basePath = process.env.OLLAMA_BASE_PATH;
     this.model = modelPreference || process.env.OLLAMA_MODEL_PREF;
     this.keepAlive = process.env.OLLAMA_KEEP_ALIVE_TIMEOUT

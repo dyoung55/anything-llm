@@ -16,15 +16,16 @@ const cacheFolder = path.resolve(
 );
 
 class FireworksAiLLM {
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     this.className = "FireworksAiLLM";
 
-    if (!process.env.FIREWORKS_AI_LLM_API_KEY)
+    const apiKey = apiKeyOverride || process.env.FIREWORKS_AI_LLM_API_KEY;
+    if (!apiKey)
       throw new Error("No FireworksAI API key was set.");
     const { OpenAI: OpenAIApi } = require("openai");
     this.openai = new OpenAIApi({
       baseURL: "https://api.fireworks.ai/inference/v1",
-      apiKey: process.env.FIREWORKS_AI_LLM_API_KEY ?? null,
+      apiKey: apiKey ?? null,
     });
     this.model = modelPreference || process.env.FIREWORKS_AI_LLM_MODEL_PREF;
     this.limits = {

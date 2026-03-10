@@ -7,17 +7,18 @@ const {
 } = require("../../helpers/chat/responses");
 
 class HuggingFaceLLM {
-  constructor(embedder = null, _modelPreference = null) {
+  constructor(embedder = null, _modelPreference = null, apiKeyOverride = null) {
     if (!process.env.HUGGING_FACE_LLM_ENDPOINT)
       throw new Error("No HuggingFace Inference Endpoint was set.");
-    if (!process.env.HUGGING_FACE_LLM_API_KEY)
+    const apiKey = apiKeyOverride || process.env.HUGGING_FACE_LLM_API_KEY;
+    if (!apiKey)
       throw new Error("No HuggingFace Access Token was set.");
     const { OpenAI: OpenAIApi } = require("openai");
 
     this.className = "HuggingFaceLLM";
     this.openai = new OpenAIApi({
       baseURL: `${process.env.HUGGING_FACE_LLM_ENDPOINT}/v1`,
-      apiKey: process.env.HUGGING_FACE_LLM_API_KEY,
+      apiKey: apiKey,
     });
     // When using HF inference server - the model param is not required so
     // we can stub it here. HF Endpoints can only run one model at a time.

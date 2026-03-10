@@ -125,121 +125,121 @@ function getVectorDbClass(getExactly = null) {
 
 /**
  * Returns the LLMProvider with its embedder attached via system or via defined provider.
- * @param {{provider: string | null, model: string | null} | null} params - Initialize params for LLMs provider
+ * @param {{provider: string | null, model: string | null, apiKey: string | null} | null} params - Initialize params for LLMs provider
  * @returns {BaseLLMProvider}
  */
-function getLLMProvider({ provider = null, model = null } = {}) {
+function getLLMProvider({ provider = null, model = null, apiKey = null } = {}) {
   const LLMSelection = provider ?? process.env.LLM_PROVIDER ?? "openai";
   const embedder = getEmbeddingEngineSelection();
 
   switch (LLMSelection) {
     case "openai":
       const { OpenAiLLM } = require("../AiProviders/openAi");
-      return new OpenAiLLM(embedder, model);
+      return new OpenAiLLM(embedder, model, apiKey);
     case "azure":
       const { AzureOpenAiLLM } = require("../AiProviders/azureOpenAi");
-      return new AzureOpenAiLLM(embedder, model);
+      return new AzureOpenAiLLM(embedder, model, apiKey);
     case "anthropic":
       const { AnthropicLLM } = require("../AiProviders/anthropic");
-      return new AnthropicLLM(embedder, model);
+      return new AnthropicLLM(embedder, model, apiKey);
     case "gemini":
       const { GeminiLLM } = require("../AiProviders/gemini");
-      return new GeminiLLM(embedder, model);
+      return new GeminiLLM(embedder, model, apiKey);
     case "lmstudio":
       const { LMStudioLLM } = require("../AiProviders/lmStudio");
-      return new LMStudioLLM(embedder, model);
+      return new LMStudioLLM(embedder, model, apiKey);
     case "localai":
       const { LocalAiLLM } = require("../AiProviders/localAi");
-      return new LocalAiLLM(embedder, model);
+      return new LocalAiLLM(embedder, model, apiKey);
     case "ollama":
       const { OllamaAILLM } = require("../AiProviders/ollama");
-      return new OllamaAILLM(embedder, model);
+      return new OllamaAILLM(embedder, model, apiKey);
     case "togetherai":
       const { TogetherAiLLM } = require("../AiProviders/togetherAi");
-      return new TogetherAiLLM(embedder, model);
+      return new TogetherAiLLM(embedder, model, apiKey);
     case "fireworksai":
       const { FireworksAiLLM } = require("../AiProviders/fireworksAi");
-      return new FireworksAiLLM(embedder, model);
+      return new FireworksAiLLM(embedder, model, apiKey);
     case "perplexity":
       const { PerplexityLLM } = require("../AiProviders/perplexity");
-      return new PerplexityLLM(embedder, model);
+      return new PerplexityLLM(embedder, model, apiKey);
     case "openrouter":
       const { OpenRouterLLM } = require("../AiProviders/openRouter");
-      return new OpenRouterLLM(embedder, model);
+      return new OpenRouterLLM(embedder, model, apiKey);
     case "mistral":
       const { MistralLLM } = require("../AiProviders/mistral");
-      return new MistralLLM(embedder, model);
+      return new MistralLLM(embedder, model, apiKey);
     case "huggingface":
       const { HuggingFaceLLM } = require("../AiProviders/huggingface");
-      return new HuggingFaceLLM(embedder, model);
+      return new HuggingFaceLLM(embedder, model, apiKey);
     case "groq":
       const { GroqLLM } = require("../AiProviders/groq");
-      return new GroqLLM(embedder, model);
+      return new GroqLLM(embedder, model, apiKey);
     case "koboldcpp":
       const { KoboldCPPLLM } = require("../AiProviders/koboldCPP");
-      return new KoboldCPPLLM(embedder, model);
+      return new KoboldCPPLLM(embedder, model, apiKey);
     case "textgenwebui":
       const { TextGenWebUILLM } = require("../AiProviders/textGenWebUI");
-      return new TextGenWebUILLM(embedder, model);
+      return new TextGenWebUILLM(embedder, model, apiKey);
     case "cohere":
       const { CohereLLM } = require("../AiProviders/cohere");
-      return new CohereLLM(embedder, model);
+      return new CohereLLM(embedder, model, apiKey);
     case "litellm":
       const { LiteLLM } = require("../AiProviders/liteLLM");
-      return new LiteLLM(embedder, model);
+      return new LiteLLM(embedder, model, apiKey);
     case "generic-openai":
       const { GenericOpenAiLLM } = require("../AiProviders/genericOpenAi");
-      return new GenericOpenAiLLM(embedder, model);
+      return new GenericOpenAiLLM(embedder, model, apiKey);
     case "bedrock":
       const { AWSBedrockLLM } = require("../AiProviders/bedrock");
-      return new AWSBedrockLLM(embedder, model);
+      return new AWSBedrockLLM(embedder, model, apiKey);
     case "deepseek":
       const { DeepSeekLLM } = require("../AiProviders/deepseek");
-      return new DeepSeekLLM(embedder, model);
+      return new DeepSeekLLM(embedder, model, apiKey);
     case "apipie":
       const { ApiPieLLM } = require("../AiProviders/apipie");
-      return new ApiPieLLM(embedder, model);
+      return new ApiPieLLM(embedder, model, apiKey);
     case "novita":
       const { NovitaLLM } = require("../AiProviders/novita");
-      return new NovitaLLM(embedder, model);
+      return new NovitaLLM(embedder, model, apiKey);
     case "xai":
       const { XAiLLM } = require("../AiProviders/xai");
-      return new XAiLLM(embedder, model);
+      return new XAiLLM(embedder, model, apiKey);
     case "nvidia-nim":
       const { NvidiaNimLLM } = require("../AiProviders/nvidiaNim");
-      return new NvidiaNimLLM(embedder, model);
+      return new NvidiaNimLLM(embedder, model, apiKey);
     case "ppio":
       const { PPIOLLM } = require("../AiProviders/ppio");
-      return new PPIOLLM(embedder, model);
+      return new PPIOLLM(embedder, model, apiKey);
     case "moonshotai":
       const { MoonshotAiLLM } = require("../AiProviders/moonshotAi");
-      return new MoonshotAiLLM(embedder, model);
+      return new MoonshotAiLLM(embedder, model, apiKey);
     case "dpais":
       const { DellProAiStudioLLM } = require("../AiProviders/dellProAiStudio");
-      return new DellProAiStudioLLM(embedder, model);
+      return new DellProAiStudioLLM(embedder, model, apiKey);
     case "cometapi":
       const { CometApiLLM } = require("../AiProviders/cometapi");
-      return new CometApiLLM(embedder, model);
+      return new CometApiLLM(embedder, model, apiKey);
     case "foundry":
       const { FoundryLLM } = require("../AiProviders/foundry");
-      return new FoundryLLM(embedder, model);
+      return new FoundryLLM(embedder, model, apiKey);
     case "zai":
       const { ZAiLLM } = require("../AiProviders/zai");
-      return new ZAiLLM(embedder, model);
+      return new ZAiLLM(embedder, model, apiKey);
     case "giteeai":
       const { GiteeAILLM } = require("../AiProviders/giteeai");
-      return new GiteeAILLM(embedder, model);
+      return new GiteeAILLM(embedder, model, apiKey);
     case "docker-model-runner":
       const {
         DockerModelRunnerLLM,
       } = require("../AiProviders/dockerModelRunner");
-      return new DockerModelRunnerLLM(embedder, model);
+      return new DockerModelRunnerLLM(embedder, model, apiKey);
     case "privatemode":
       const { PrivatemodeLLM } = require("../AiProviders/privatemode");
-      return new PrivatemodeLLM(embedder, model);
+      return new PrivatemodeLLM(embedder, model, apiKey);
     case "sambanova":
       const { SambaNovaLLM } = require("../AiProviders/sambanova");
-      return new SambaNovaLLM(embedder, model);
+      return new SambaNovaLLM(embedder, model, apiKey);
     default:
       throw new Error(
         `ENV: No valid LLM_PROVIDER value found in environment! Using ${process.env.LLM_PROVIDER}`

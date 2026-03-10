@@ -28,8 +28,9 @@ class OpenRouterLLM {
    */
   defaultTimeout = 3_000;
 
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.OPENROUTER_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.OPENROUTER_API_KEY;
+    if (!apiKey)
       throw new Error("No OpenRouter API key was set.");
 
     this.className = "OpenRouterLLM";
@@ -37,7 +38,7 @@ class OpenRouterLLM {
     this.basePath = "https://openrouter.ai/api/v1";
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
-      apiKey: process.env.OPENROUTER_API_KEY ?? null,
+      apiKey: apiKey ?? null,
       defaultHeaders: {
         "HTTP-Referer": "https://anythingllm.com",
         "X-Title": "AnythingLLM",

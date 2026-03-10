@@ -7,14 +7,15 @@ const {
 } = require("../../helpers/chat/LLMPerformanceMonitor");
 
 class CohereLLM {
-  constructor(embedder = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     this.className = "CohereLLM";
     const { CohereClient } = require("cohere-ai");
-    if (!process.env.COHERE_API_KEY)
+    const apiKey = apiKeyOverride || process.env.COHERE_API_KEY;
+    if (!apiKey)
       throw new Error("No Cohere API key was set.");
 
     const cohere = new CohereClient({
-      token: process.env.COHERE_API_KEY,
+      token: apiKey,
     });
 
     this.cohere = cohere;

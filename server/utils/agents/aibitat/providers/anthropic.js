@@ -52,9 +52,13 @@ class AnthropicProvider extends Provider {
         maxRetries: 3,
       },
       model = "claude-3-5-sonnet-20240620",
+      apiKey = null,
     } = config;
 
-    const client = new Anthropic(options);
+    const client = new Anthropic({
+      ...options,
+      apiKey: apiKey ?? options.apiKey,
+    });
 
     super(client);
     this.model = model;

@@ -9,10 +9,10 @@ class DeepSeekProvider extends InheritMultiple([Provider, UnTooled]) {
 
   constructor(config = {}) {
     super();
-    const { model = "deepseek-chat" } = config;
+    const { model = "deepseek-chat", apiKey = null } = config;
     const client = new OpenAI({
       baseURL: "https://api.deepseek.com/v1",
-      apiKey: process.env.DEEPSEEK_API_KEY ?? null,
+      apiKey: apiKey ?? process.env.DEEPSEEK_API_KEY ?? null,
       maxRetries: 3,
     });
 

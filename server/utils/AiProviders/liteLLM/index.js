@@ -8,7 +8,7 @@ const {
 } = require("../../helpers/chat/responses");
 
 class LiteLLM {
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const { OpenAI: OpenAIApi } = require("openai");
     if (!process.env.LITE_LLM_BASE_PATH)
       throw new Error(
@@ -19,7 +19,7 @@ class LiteLLM {
     this.basePath = process.env.LITE_LLM_BASE_PATH;
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
-      apiKey: process.env.LITE_LLM_API_KEY ?? null,
+      apiKey: apiKeyOverride ?? process.env.LITE_LLM_API_KEY ?? null,
     });
     this.model = modelPreference ?? process.env.LITE_LLM_MODEL_PREF ?? null;
 

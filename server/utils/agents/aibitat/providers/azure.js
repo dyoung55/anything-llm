@@ -15,7 +15,7 @@ class AzureOpenAiProvider extends Provider {
 
   constructor(config = { model: null }) {
     const client = new OpenAI({
-      apiKey: process.env.AZURE_OPENAI_KEY,
+      apiKey: config.apiKey ?? process.env.AZURE_OPENAI_KEY,
       baseURL: AzureOpenAiLLM.formatBaseUrl(process.env.AZURE_OPENAI_ENDPOINT),
     });
     super(client);

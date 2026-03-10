@@ -15,11 +15,11 @@ class FoundryProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = process.env.FOUNDRY_MODEL_PREF } = config;
+    const { model = process.env.FOUNDRY_MODEL_PREF, apiKey = null } = config;
     super();
     const client = new OpenAI({
       baseURL: parseFoundryBasePath(process.env.FOUNDRY_BASE_PATH),
-      apiKey: null,
+      apiKey: apiKey,
       maxRetries: 3,
     });
 

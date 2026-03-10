@@ -12,12 +12,12 @@ class GeminiProvider extends Provider {
   model;
 
   constructor(config = {}) {
-    const { model = "gemini-2.0-flash-lite" } = config;
+    const { model = "gemini-2.0-flash-lite", apiKey = null } = config;
     super();
     this.className = "GeminiProvider";
     const client = new OpenAI({
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-      apiKey: process.env.GEMINI_API_KEY,
+      apiKey: apiKey ?? process.env.GEMINI_API_KEY,
       maxRetries: 0,
     });
 

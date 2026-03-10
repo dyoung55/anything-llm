@@ -7,11 +7,11 @@ class MoonshotAiProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = "moonshot-v1-32k" } = config;
+    const { model = "moonshot-v1-32k", apiKey = null } = config;
     super();
     const client = new OpenAI({
       baseURL: "https://api.moonshot.ai/v1",
-      apiKey: process.env.MOONSHOT_AI_API_KEY,
+      apiKey: apiKey ?? process.env.MOONSHOT_AI_API_KEY,
       maxRetries: 3,
     });
 

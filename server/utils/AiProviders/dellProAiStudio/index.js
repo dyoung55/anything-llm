@@ -9,7 +9,7 @@ const {
 
 //  hybrid of openAi LLM chat completion for Dell Pro AI Studio
 class DellProAiStudioLLM {
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     if (!process.env.DPAIS_LLM_BASE_PATH)
       throw new Error("No Dell Pro AI Studio Base Path was set.");
 
@@ -17,7 +17,7 @@ class DellProAiStudioLLM {
     const { OpenAI: OpenAIApi } = require("openai");
     this.dpais = new OpenAIApi({
       baseURL: DellProAiStudioLLM.parseBasePath(),
-      apiKey: null,
+      apiKey: apiKeyOverride ?? null,
     });
 
     this.model = modelPreference || process.env.DPAIS_LLM_MODEL_PREF;

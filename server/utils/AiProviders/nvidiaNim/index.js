@@ -8,7 +8,7 @@ const {
 } = require("../../helpers/chat/responses");
 
 class NvidiaNimLLM {
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     if (!process.env.NVIDIA_NIM_LLM_BASE_PATH)
       throw new Error("No NVIDIA NIM API Base Path was set.");
 
@@ -16,7 +16,7 @@ class NvidiaNimLLM {
     const { OpenAI: OpenAIApi } = require("openai");
     this.nvidiaNim = new OpenAIApi({
       baseURL: parseNvidiaNimBasePath(process.env.NVIDIA_NIM_LLM_BASE_PATH),
-      apiKey: null,
+      apiKey: apiKeyOverride ?? null,
     });
 
     this.model = modelPreference || process.env.NVIDIA_NIM_LLM_MODEL_PREF;

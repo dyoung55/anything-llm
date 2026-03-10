@@ -31,6 +31,7 @@ async function streamChatWithForEmbed(
   const LLMConnector = getLLMProvider({
     provider: embed?.workspace?.chatProvider,
     model: chatModel ?? embed.workspace?.chatModel,
+    apiKey: embed?.workspace?.chatApiKey,
   });
   const VectorDb = getVectorDbClass();
 

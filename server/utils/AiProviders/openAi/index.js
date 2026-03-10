@@ -11,13 +11,14 @@ const {
 } = require("../../helpers/chat/LLMPerformanceMonitor");
 
 class OpenAiLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.OPEN_AI_KEY) throw new Error("No OpenAI API key was set.");
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.OPEN_AI_KEY;
+    if (!apiKey) throw new Error("No OpenAI API key was set.");
     this.className = "OpenAiLLM";
     const { OpenAI: OpenAIApi } = require("openai");
 
     this.openai = new OpenAIApi({
-      apiKey: process.env.OPEN_AI_KEY,
+      apiKey: apiKey,
     });
     this.model = modelPreference || process.env.OPEN_MODEL_PREF || "gpt-4o";
     this.limits = {

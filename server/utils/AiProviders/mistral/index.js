@@ -8,15 +8,16 @@ const {
 } = require("../../helpers/chat/responses");
 
 class MistralLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.MISTRAL_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.MISTRAL_API_KEY;
+    if (!apiKey)
       throw new Error("No Mistral API key was set.");
 
     this.className = "MistralLLM";
     const { OpenAI: OpenAIApi } = require("openai");
     this.openai = new OpenAIApi({
       baseURL: "https://api.mistral.ai/v1",
-      apiKey: process.env.MISTRAL_API_KEY ?? null,
+      apiKey: apiKey ?? null,
     });
     this.model =
       modelPreference || process.env.MISTRAL_MODEL_PREF || "mistral-tiny";

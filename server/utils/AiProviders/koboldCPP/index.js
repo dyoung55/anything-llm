@@ -10,7 +10,7 @@ const {
 const { v4: uuidv4 } = require("uuid");
 
 class KoboldCPPLLM {
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const { OpenAI: OpenAIApi } = require("openai");
     if (!process.env.KOBOLD_CPP_BASE_PATH)
       throw new Error(
@@ -21,7 +21,7 @@ class KoboldCPPLLM {
     this.basePath = process.env.KOBOLD_CPP_BASE_PATH;
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
-      apiKey: null,
+      apiKey: apiKeyOverride ?? null,
     });
     this.model = modelPreference ?? process.env.KOBOLD_CPP_MODEL_PREF ?? null;
     if (!this.model) throw new Error("KoboldCPP must have a valid model set.");

@@ -15,7 +15,7 @@ class FoundryLLM {
   /** @see FoundryLLM.cacheContextWindows */
   static modelContextWindows = {};
 
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     if (!process.env.FOUNDRY_BASE_PATH)
       throw new Error("No Foundry Base Path was set.");
 
@@ -23,7 +23,7 @@ class FoundryLLM {
     this.model = modelPreference || process.env.FOUNDRY_MODEL_PREF;
     this.openai = new OpenAIApi({
       baseURL: parseFoundryBasePath(process.env.FOUNDRY_BASE_PATH),
-      apiKey: null,
+      apiKey: apiKeyOverride ?? null,
     });
 
     this.embedder = embedder ?? new NativeEmbedder();

@@ -929,73 +929,74 @@ ${this.getHistory({ to: route.to })
   getProviderForConfig(config) {
     if (typeof config.provider === "object") return config.provider;
 
+    const apiKey = config.apiKey || null;
     switch (config.provider) {
       case "openai":
-        return new Providers.OpenAIProvider({ model: config.model });
+        return new Providers.OpenAIProvider({ model: config.model, apiKey });
       case "anthropic":
-        return new Providers.AnthropicProvider({ model: config.model });
+        return new Providers.AnthropicProvider({ model: config.model, apiKey });
       case "lmstudio":
-        return new Providers.LMStudioProvider({ model: config.model });
+        return new Providers.LMStudioProvider({ model: config.model, apiKey });
       case "ollama":
-        return new Providers.OllamaProvider({ model: config.model });
+        return new Providers.OllamaProvider({ model: config.model, apiKey });
       case "groq":
-        return new Providers.GroqProvider({ model: config.model });
+        return new Providers.GroqProvider({ model: config.model, apiKey });
       case "togetherai":
-        return new Providers.TogetherAIProvider({ model: config.model });
+        return new Providers.TogetherAIProvider({ model: config.model, apiKey });
       case "azure":
-        return new Providers.AzureOpenAiProvider({ model: config.model });
+        return new Providers.AzureOpenAiProvider({ model: config.model, apiKey });
       case "koboldcpp":
-        return new Providers.KoboldCPPProvider({});
+        return new Providers.KoboldCPPProvider({ apiKey });
       case "localai":
-        return new Providers.LocalAIProvider({ model: config.model });
+        return new Providers.LocalAIProvider({ model: config.model, apiKey });
       case "openrouter":
-        return new Providers.OpenRouterProvider({ model: config.model });
+        return new Providers.OpenRouterProvider({ model: config.model, apiKey });
       case "mistral":
-        return new Providers.MistralProvider({ model: config.model });
+        return new Providers.MistralProvider({ model: config.model, apiKey });
       case "generic-openai":
-        return new Providers.GenericOpenAiProvider({ model: config.model });
+        return new Providers.GenericOpenAiProvider({ model: config.model, apiKey });
       case "perplexity":
-        return new Providers.PerplexityProvider({ model: config.model });
+        return new Providers.PerplexityProvider({ model: config.model, apiKey });
       case "textgenwebui":
-        return new Providers.TextWebGenUiProvider({});
+        return new Providers.TextWebGenUiProvider({ apiKey });
       case "bedrock":
-        return new Providers.AWSBedrockProvider({});
+        return new Providers.AWSBedrockProvider({ apiKey });
       case "fireworksai":
-        return new Providers.FireworksAIProvider({ model: config.model });
+        return new Providers.FireworksAIProvider({ model: config.model, apiKey });
       case "nvidia-nim":
-        return new Providers.NvidiaNimProvider({ model: config.model });
+        return new Providers.NvidiaNimProvider({ model: config.model, apiKey });
       case "moonshotai":
-        return new Providers.MoonshotAiProvider({ model: config.model });
+        return new Providers.MoonshotAiProvider({ model: config.model, apiKey });
       case "deepseek":
-        return new Providers.DeepSeekProvider({ model: config.model });
+        return new Providers.DeepSeekProvider({ model: config.model, apiKey });
       case "litellm":
-        return new Providers.LiteLLMProvider({ model: config.model });
+        return new Providers.LiteLLMProvider({ model: config.model, apiKey });
       case "apipie":
-        return new Providers.ApiPieProvider({ model: config.model });
+        return new Providers.ApiPieProvider({ model: config.model, apiKey });
       case "xai":
-        return new Providers.XAIProvider({ model: config.model });
+        return new Providers.XAIProvider({ model: config.model, apiKey });
       case "zai":
-        return new Providers.ZAIProvider({ model: config.model });
+        return new Providers.ZAIProvider({ model: config.model, apiKey });
       case "novita":
-        return new Providers.NovitaProvider({ model: config.model });
+        return new Providers.NovitaProvider({ model: config.model, apiKey });
       case "ppio":
-        return new Providers.PPIOProvider({ model: config.model });
+        return new Providers.PPIOProvider({ model: config.model, apiKey });
       case "gemini":
-        return new Providers.GeminiProvider({ model: config.model });
+        return new Providers.GeminiProvider({ model: config.model, apiKey });
       case "dpais":
-        return new Providers.DellProAiStudioProvider({ model: config.model });
+        return new Providers.DellProAiStudioProvider({ model: config.model, apiKey });
       case "cometapi":
-        return new Providers.CometApiProvider({ model: config.model });
+        return new Providers.CometApiProvider({ model: config.model, apiKey });
       case "foundry":
-        return new Providers.FoundryProvider({ model: config.model });
+        return new Providers.FoundryProvider({ model: config.model, apiKey });
       case "giteeai":
-        return new Providers.GiteeAIProvider({ model: config.model });
+        return new Providers.GiteeAIProvider({ model: config.model, apiKey });
       case "cohere":
-        return new Providers.CohereProvider({ model: config.model });
+        return new Providers.CohereProvider({ model: config.model, apiKey });
       case "docker-model-runner":
-        return new Providers.DockerModelRunnerProvider({ model: config.model });
+        return new Providers.DockerModelRunnerProvider({ model: config.model, apiKey });
       case "privatemode":
-        return new Providers.PrivatemodeProvider({ model: config.model });
+        return new Providers.PrivatemodeProvider({ model: config.model, apiKey });
       case "sambanova":
         return new Providers.SambaNovaProvider({ model: config.model });
       default:

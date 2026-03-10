@@ -8,10 +8,10 @@ class GiteeAIProvider extends InheritMultiple([Provider, UnTooled]) {
 
   constructor(config = {}) {
     super();
-    const { model = "DeepSeek-R1" } = config;
+    const { model = "DeepSeek-R1", apiKey = null } = config;
     this._client = new OpenAI({
       baseURL: "https://ai.gitee.com/v1",
-      apiKey: process.env.GITEE_AI_API_KEY ?? null,
+      apiKey: apiKey ?? process.env.GITEE_AI_API_KEY ?? null,
       maxRetries: 3,
     });
     this.model = model;

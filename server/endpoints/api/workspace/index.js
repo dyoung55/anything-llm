@@ -976,7 +976,11 @@ function apiWorkspaceEndpoints(app) {
         const results = await VectorDb.performSimilaritySearch({
           namespace: workspace.slug,
           input: String(query),
-          LLMConnector: getLLMProvider(),
+          LLMConnector: getLLMProvider({
+            provider: workspace?.chatProvider,
+            model: workspace?.chatModel,
+            apiKey: workspace?.chatApiKey,
+          }),
           similarityThreshold: parseSimilarityThreshold(),
           topN: parseTopN(),
           rerank: workspace?.vectorSearchMode === "rerank",

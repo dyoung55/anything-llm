@@ -12,11 +12,11 @@ class NvidiaNimProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model } = config;
+    const { model, apiKey = null } = config;
     super();
     const client = new OpenAI({
       baseURL: parseNvidiaNimBasePath(process.env.NVIDIA_NIM_LLM_BASE_PATH),
-      apiKey: null,
+      apiKey: apiKey,
       maxRetries: 0,
     });
 

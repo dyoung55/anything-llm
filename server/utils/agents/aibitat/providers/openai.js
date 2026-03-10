@@ -17,9 +17,13 @@ class OpenAIProvider extends Provider {
         maxRetries: 3,
       },
       model = "gpt-4o",
+      apiKey = null,
     } = config;
 
-    const client = new OpenAI(options);
+    const client = new OpenAI({
+      ...options,
+      apiKey: apiKey ?? options.apiKey,
+    });
 
     super(client);
 

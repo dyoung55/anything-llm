@@ -586,6 +586,7 @@ class AgentHandler {
     this.aibitat = new AIbitat({
       provider: this.provider ?? "openai",
       model: this.model ?? "gpt-4o",
+      apiKey: this.invocation.workspace.chatApiKey,
       chats: await this.#chatHistory(20),
       handlerProps: {
         invocation: this.invocation,

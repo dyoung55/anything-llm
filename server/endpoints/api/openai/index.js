@@ -62,6 +62,7 @@ function apiOpenAICompatibleEndpoints(app) {
         let LLMProvider = getLLMProvider({
           provider,
           model: workspace?.chatModel,
+          apiKey: workspace?.chatApiKey,
         });
         data.push({
           id: workspace.slug,

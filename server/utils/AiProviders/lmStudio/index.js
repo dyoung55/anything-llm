@@ -13,12 +13,12 @@ class LMStudioLLM {
   /** @see LMStudioLLM.cacheContextWindows */
   static modelContextWindows = {};
 
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     if (!process.env.LMSTUDIO_BASE_PATH)
       throw new Error("No LMStudio API Base Path was set.");
 
     this.className = "LMStudioLLM";
-    const apiKey = process.env.LMSTUDIO_AUTH_TOKEN ?? null;
+    const apiKey = apiKeyOverride ?? process.env.LMSTUDIO_AUTH_TOKEN ?? null;
     this.lmstudio = new OpenAIApi({
       baseURL: parseLMStudioBasePath(process.env.LMSTUDIO_BASE_PATH), // here is the URL to your LMStudio instance
       apiKey,

@@ -14,15 +14,16 @@ function perplexityModels() {
 }
 
 class PerplexityLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.PERPLEXITY_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.PERPLEXITY_API_KEY;
+    if (!apiKey)
       throw new Error("No Perplexity API key was set.");
 
     this.className = "PerplexityLLM";
     const { OpenAI: OpenAIApi } = require("openai");
     this.openai = new OpenAIApi({
       baseURL: "https://api.perplexity.ai",
-      apiKey: process.env.PERPLEXITY_API_KEY ?? null,
+      apiKey: apiKey ?? null,
     });
     this.model =
       modelPreference ||

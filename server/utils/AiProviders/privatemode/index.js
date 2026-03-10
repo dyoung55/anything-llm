@@ -16,7 +16,7 @@ class PrivatemodeLLM {
     "openai/gpt-oss-120b": 128000,
   };
 
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     if (!process.env.PRIVATEMODE_LLM_BASE_PATH)
       throw new Error("No Privatemode Base Path was set.");
 
@@ -24,7 +24,7 @@ class PrivatemodeLLM {
     const { OpenAI: OpenAIApi } = require("openai");
     this.client = new OpenAIApi({
       baseURL: PrivatemodeLLM.parseBasePath(),
-      apiKey: null,
+      apiKey: apiKeyOverride ?? null,
     });
 
     this.model = modelPreference || process.env.PRIVATEMODE_LLM_MODEL_PREF;

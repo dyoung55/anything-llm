@@ -10,14 +10,15 @@ const {
 } = require("../../helpers/chat/responses");
 
 class DeepSeekLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.DEEPSEEK_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.DEEPSEEK_API_KEY;
+    if (!apiKey)
       throw new Error("No DeepSeek API key was set.");
     this.className = "DeepSeekLLM";
     const { OpenAI: OpenAIApi } = require("openai");
 
     this.openai = new OpenAIApi({
-      apiKey: process.env.DEEPSEEK_API_KEY,
+      apiKey: apiKey,
       baseURL: "https://api.deepseek.com/v1",
     });
     this.model =

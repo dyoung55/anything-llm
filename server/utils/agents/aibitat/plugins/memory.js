@@ -91,6 +91,7 @@ const memory = {
               const LLMConnector = getLLMProvider({
                 provider: workspace?.chatProvider,
                 model: workspace?.chatModel,
+                apiKey: workspace?.chatApiKey,
               });
               const vectorDB = getVectorDbClass();
               const { contextTexts = [] } =

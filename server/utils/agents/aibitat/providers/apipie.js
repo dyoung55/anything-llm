@@ -10,11 +10,11 @@ class ApiPieProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = "openrouter/llama-3.1-8b-instruct" } = config;
+    const { model = "openrouter/llama-3.1-8b-instruct", apiKey = null } = config;
     super();
     const client = new OpenAI({
       baseURL: "https://apipie.ai/v1",
-      apiKey: process.env.APIPIE_LLM_API_KEY,
+      apiKey: apiKey ?? process.env.APIPIE_LLM_API_KEY,
       maxRetries: 3,
     });
 

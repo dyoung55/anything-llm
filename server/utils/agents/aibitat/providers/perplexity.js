@@ -11,10 +11,10 @@ class PerplexityProvider extends InheritMultiple([Provider, UnTooled]) {
 
   constructor(config = {}) {
     super();
-    const { model = "sonar-small-online" } = config;
+    const { model = "sonar-small-online", apiKey = null } = config;
     const client = new OpenAI({
       baseURL: "https://api.perplexity.ai",
-      apiKey: process.env.PERPLEXITY_API_KEY ?? null,
+      apiKey: apiKey ?? process.env.PERPLEXITY_API_KEY ?? null,
       maxRetries: 3,
     });
 

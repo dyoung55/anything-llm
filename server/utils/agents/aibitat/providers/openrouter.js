@@ -12,11 +12,11 @@ class OpenRouterProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = "openrouter/auto" } = config;
+    const { model = "openrouter/auto", apiKey = null } = config;
     super();
     const client = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
-      apiKey: process.env.OPENROUTER_API_KEY,
+      apiKey: apiKey ?? process.env.OPENROUTER_API_KEY,
       maxRetries: 3,
       defaultHeaders: {
         "HTTP-Referer": "https://anythingllm.com",

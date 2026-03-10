@@ -10,11 +10,11 @@ class PPIOProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = "qwen/qwen2.5-32b-instruct" } = config;
+    const { model = "qwen/qwen2.5-32b-instruct", apiKey = null } = config;
     super();
     const client = new OpenAI({
       baseURL: "https://api.ppinfra.com/v3/openai",
-      apiKey: process.env.PPIO_API_KEY,
+      apiKey: apiKey ?? process.env.PPIO_API_KEY,
       maxRetries: 3,
       defaultHeaders: {
         "HTTP-Referer": "https://anythingllm.com",

@@ -15,10 +15,10 @@ class MistralProvider extends InheritMultiple([Provider, UnTooled]) {
 
   constructor(config = {}) {
     super();
-    const { model = "mistral-medium" } = config;
+    const { model = "mistral-medium", apiKey = null } = config;
     const client = new OpenAI({
       baseURL: "https://api.mistral.ai/v1",
-      apiKey: process.env.MISTRAL_API_KEY,
+      apiKey: apiKey ?? process.env.MISTRAL_API_KEY,
       maxRetries: 3,
     });
 

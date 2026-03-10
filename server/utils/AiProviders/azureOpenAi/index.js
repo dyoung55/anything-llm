@@ -8,16 +8,17 @@ const {
 } = require("../../helpers/chat/LLMPerformanceMonitor");
 
 class AzureOpenAiLLM {
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const { OpenAI } = require("openai");
     if (!process.env.AZURE_OPENAI_ENDPOINT)
       throw new Error("No Azure API endpoint was set.");
-    if (!process.env.AZURE_OPENAI_KEY)
+    const apiKey = apiKeyOverride || process.env.AZURE_OPENAI_KEY;
+    if (!apiKey)
       throw new Error("No Azure API key was set.");
 
     this.className = "AzureOpenAiLLM";
     this.openai = new OpenAI({
-      apiKey: process.env.AZURE_OPENAI_KEY,
+      apiKey: apiKey,
       baseURL: AzureOpenAiLLM.formatBaseUrl(process.env.AZURE_OPENAI_ENDPOINT),
     });
     this.model = modelPreference ?? process.env.OPEN_MODEL_PREF;

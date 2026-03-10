@@ -20,8 +20,9 @@ const cacheFolder = path.resolve(
 
 class CometApiLLM {
   defaultTimeout = 3_000;
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.COMETAPI_LLM_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.COMETAPI_LLM_API_KEY;
+    if (!apiKey)
       throw new Error("No CometAPI API key was set.");
 
     this.className = "CometApiLLM";
@@ -29,7 +30,7 @@ class CometApiLLM {
     this.basePath = "https://api.cometapi.com/v1";
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
-      apiKey: process.env.COMETAPI_LLM_API_KEY ?? null,
+      apiKey: apiKey ?? null,
       defaultHeaders: {
         "HTTP-Referer": "https://anythingllm.com",
         "X-CometAPI-Source": "anythingllm",

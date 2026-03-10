@@ -18,14 +18,15 @@ const cacheFolder = path.resolve(
 );
 
 class GiteeAILLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.GITEE_AI_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.GITEE_AI_API_KEY;
+    if (!apiKey)
       throw new Error("No Gitee AI API key was set.");
     const { OpenAI: OpenAIApi } = require("openai");
 
     this.className = "GiteeAILLM";
     this.openai = new OpenAIApi({
-      apiKey: process.env.GITEE_AI_API_KEY,
+      apiKey: apiKey,
       baseURL: "https://ai.gitee.com/v1",
     });
     this.model = modelPreference || process.env.GITEE_AI_MODEL_PREF || "";

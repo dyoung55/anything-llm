@@ -10,11 +10,11 @@ class TogetherAIProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = "mistralai/Mistral-7B-Instruct-v0.1" } = config;
+    const { model = "mistralai/Mistral-7B-Instruct-v0.1", apiKey = null } = config;
     super();
     const client = new OpenAI({
       baseURL: "https://api.together.xyz/v1",
-      apiKey: process.env.TOGETHER_AI_API_KEY,
+      apiKey: apiKey ?? process.env.TOGETHER_AI_API_KEY,
       maxRetries: 3,
     });
 

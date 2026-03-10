@@ -22,7 +22,7 @@ class LMStudioProvider extends InheritMultiple([Provider, UnTooled]) {
     const model = config?.model || process.env.LMSTUDIO_MODEL_PREF;
     if (!model) throw new Error("LMStudio must have a valid model set.");
 
-    const apiKey = process.env.LMSTUDIO_AUTH_TOKEN ?? null;
+    const apiKey = config?.apiKey ?? process.env.LMSTUDIO_AUTH_TOKEN ?? null;
     const client = new OpenAI({
       baseURL: parseLMStudioBasePath(process.env.LMSTUDIO_BASE_PATH),
       apiKey,

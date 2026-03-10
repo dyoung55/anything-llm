@@ -22,8 +22,9 @@ class AWSBedrockProvider extends InheritMultiple([Provider, UnTooled]) {
   constructor(_config = {}) {
     super();
     const model = process.env.AWS_BEDROCK_LLM_MODEL_PREFERENCE ?? null;
+    const apiKey = _config.apiKey ?? null;
     const client = createBedrockChatClient(
-      {},
+      { apiKey },
       this.authMethod,
       this.credentials,
       model

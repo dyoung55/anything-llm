@@ -20,7 +20,7 @@ class DockerModelRunnerLLM {
       : path.resolve(__dirname, `../../../storage/models/docker-model-runner`)
   );
 
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     if (!process.env.DOCKER_MODEL_RUNNER_BASE_PATH)
       throw new Error("No Docker Model Runner API Base Path was set.");
     if (!process.env.DOCKER_MODEL_RUNNER_LLM_MODEL_PREF && !modelPreference)
@@ -31,7 +31,7 @@ class DockerModelRunnerLLM {
       baseURL: parseDockerModelRunnerEndpoint(
         process.env.DOCKER_MODEL_RUNNER_BASE_PATH
       ),
-      apiKey: null,
+      apiKey: apiKeyOverride ?? null,
     });
 
     this.model =

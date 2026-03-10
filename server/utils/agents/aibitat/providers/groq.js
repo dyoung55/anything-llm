@@ -11,11 +11,11 @@ class GroqProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = "llama3-8b-8192" } = config;
+    const { model = "llama3-8b-8192", apiKey = null } = config;
     super();
     const client = new OpenAI({
       baseURL: "https://api.groq.com/openai/v1",
-      apiKey: process.env.GROQ_API_KEY,
+      apiKey: apiKey ?? process.env.GROQ_API_KEY,
       maxRetries: 3,
     });
 

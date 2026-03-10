@@ -8,7 +8,7 @@ const {
 } = require("../../helpers/chat/responses");
 
 class LocalAiLLM {
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     if (!process.env.LOCAL_AI_BASE_PATH)
       throw new Error("No LocalAI Base Path was set.");
 
@@ -16,7 +16,7 @@ class LocalAiLLM {
     const { OpenAI: OpenAIApi } = require("openai");
     this.openai = new OpenAIApi({
       baseURL: process.env.LOCAL_AI_BASE_PATH,
-      apiKey: process.env.LOCAL_AI_API_KEY ?? null,
+      apiKey: apiKeyOverride ?? process.env.LOCAL_AI_API_KEY ?? null,
     });
     this.model = modelPreference || process.env.LOCAL_AI_MODEL_PREF;
     this.limits = {

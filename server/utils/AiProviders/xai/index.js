@@ -9,15 +9,16 @@ const {
 const { MODEL_MAP } = require("../modelMap");
 
 class XAiLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.XAI_LLM_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.XAI_LLM_API_KEY;
+    if (!apiKey)
       throw new Error("No xAI API key was set.");
     this.className = "XAiLLM";
     const { OpenAI: OpenAIApi } = require("openai");
 
     this.openai = new OpenAIApi({
       baseURL: "https://api.x.ai/v1",
-      apiKey: process.env.XAI_LLM_API_KEY,
+      apiKey: apiKey,
     });
     this.model =
       modelPreference || process.env.XAI_LLM_MODEL_PREF || "grok-beta";

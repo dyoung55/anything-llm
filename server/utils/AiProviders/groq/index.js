@@ -8,14 +8,15 @@ const {
 const { MODEL_MAP } = require("../modelMap");
 
 class GroqLLM {
-  constructor(embedder = null, modelPreference = null) {
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const { OpenAI: OpenAIApi } = require("openai");
-    if (!process.env.GROQ_API_KEY) throw new Error("No Groq API key was set.");
+    const apiKey = apiKeyOverride || process.env.GROQ_API_KEY;
+    if (!apiKey) throw new Error("No Groq API key was set.");
     this.className = "GroqLLM";
 
     this.openai = new OpenAIApi({
       baseURL: "https://api.groq.com/openai/v1",
-      apiKey: process.env.GROQ_API_KEY,
+      apiKey: apiKey,
     });
     this.model =
       modelPreference || process.env.GROQ_MODEL_PREF || "llama-3.1-8b-instant";

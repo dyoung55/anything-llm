@@ -15,15 +15,16 @@ const cacheFolder = path.resolve(
 );
 
 class PPIOLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.PPIO_API_KEY) throw new Error("No PPIO API key was set.");
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.PPIO_API_KEY;
+    if (!apiKey) throw new Error("No PPIO API key was set.");
 
     this.className = "PPIOLLM";
     const { OpenAI: OpenAIApi } = require("openai");
     this.basePath = "https://api.ppinfra.com/v3/openai/";
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
-      apiKey: process.env.PPIO_API_KEY ?? null,
+      apiKey: apiKey ?? null,
       defaultHeaders: {
         "HTTP-Referer": "https://anythingllm.com",
         "X-API-Source": "anythingllm",

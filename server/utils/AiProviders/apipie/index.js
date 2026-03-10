@@ -19,8 +19,9 @@ const cacheFolder = path.resolve(
 );
 
 class ApiPieLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.APIPIE_LLM_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.APIPIE_LLM_API_KEY;
+    if (!apiKey)
       throw new Error("No ApiPie LLM API key was set.");
 
     this.className = "ApiPieLLM";
@@ -28,7 +29,7 @@ class ApiPieLLM {
     this.basePath = "https://apipie.ai/v1";
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
-      apiKey: process.env.APIPIE_LLM_API_KEY ?? null,
+      apiKey: apiKey ?? null,
     });
     this.model =
       modelPreference ||

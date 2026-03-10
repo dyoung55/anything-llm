@@ -11,15 +11,16 @@ const {
 } = require("../../helpers/chat/LLMPerformanceMonitor");
 
 class AnthropicLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.ANTHROPIC_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.ANTHROPIC_API_KEY;
+    if (!apiKey)
       throw new Error("No Anthropic API key was set.");
 
     this.className = "AnthropicLLM";
     // Docs: https://www.npmjs.com/package/@anthropic-ai/sdk
     const AnthropicAI = require("@anthropic-ai/sdk");
     const anthropic = new AnthropicAI({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+      apiKey: apiKey,
     });
     this.anthropic = anthropic;
     this.model =

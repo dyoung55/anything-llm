@@ -25,8 +25,9 @@ const NO_SYSTEM_PROMPT_MODELS = [
 ];
 
 class GeminiLLM {
-  constructor(embedder = null, modelPreference = null) {
-    if (!process.env.GEMINI_API_KEY)
+  constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
+    const apiKey = apiKeyOverride || process.env.GEMINI_API_KEY;
+    if (!apiKey)
       throw new Error("No Gemini API key was set.");
 
     this.className = "GeminiLLM";
@@ -38,7 +39,7 @@ class GeminiLLM {
 
     const isExperimental = this.isExperimentalModel(this.model);
     this.openai = new OpenAIApi({
-      apiKey: process.env.GEMINI_API_KEY,
+      apiKey: apiKey,
       // Even models that are v1 in gemini API can be used with v1beta/openai/ endpoint and nobody knows why.
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     });
