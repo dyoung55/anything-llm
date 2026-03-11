@@ -71,6 +71,40 @@ const MCPServers = {
         error: e.message,
       }));
   },
+
+  /**
+   * Get the global MCP configuration
+   * @returns {Promise<{success: boolean, config: Object, error?: string}>}
+   */
+  getConfig: async () => {
+    return await fetch(`${API_BASE}/mcp-servers/config`, {
+      method: "GET",
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .catch((e) => ({
+        success: false,
+        error: e.message,
+      }));
+  },
+
+  /**
+   * Update the global MCP configuration
+   * @param {Object} config - The MCP configuration object
+   * @returns {Promise<{success: boolean, message?: string, error?: string}>}
+   */
+  updateConfig: async (config) => {
+    return await fetch(`${API_BASE}/mcp-servers/config`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify({ config }),
+    })
+      .then((res) => res.json())
+      .catch((e) => ({
+        success: false,
+        error: e.message,
+      }));
+  },
 };
 
 export default MCPServers;

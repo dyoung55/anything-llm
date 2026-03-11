@@ -12,6 +12,7 @@ const {
   StreamableHTTPClientTransport,
 } = require("@modelcontextprotocol/sdk/client/streamableHttp.js");
 const { patchShellEnvironmentPath } = require("../../helpers/shell");
+const { isWithin, normalizePath } = require("../../files");
 
 /**
  * @typedef {'stdio' | 'http' | 'sse'} MCPServerTypes
@@ -147,7 +148,10 @@ class MCPHypervisor {
   async startMCPServer(name) {
     if (this.mcps[name])
       return { success: false, error: `MCP server ${name} already running` };
+
+    // Check global config
     const config = this.mcpServerConfigs.find((s) => s.name === name);
+
     if (!config)
       return {
         success: false,

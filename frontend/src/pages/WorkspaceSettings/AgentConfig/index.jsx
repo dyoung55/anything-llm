@@ -9,6 +9,9 @@ import * as Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import paths from "@/utils/paths";
 import useUser from "@/hooks/useUser";
+import OverrideAgentSettingsToggle from "./OverrideAgentSettingsToggle";
+import WorkspaceSkillsSelector from "./WorkspaceSkillsSelector";
+import WorkspaceMCPServersSelector from "./WorkspaceMCPServersSelector";
 
 export default function WorkspaceAgentConfiguration({ workspace }) {
   const { user } = useUser();
@@ -16,6 +19,7 @@ export default function WorkspaceAgentConfiguration({ workspace }) {
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentWorkspace, setCurrentWorkspace] = useState(workspace);
   const formEl = useRef(null);
 
   useEffect(() => {
@@ -70,6 +74,10 @@ export default function WorkspaceAgentConfiguration({ workspace }) {
     setHasChanges(false);
   };
 
+  const handleWorkspaceUpdate = (updatedWorkspace) => {
+    setCurrentWorkspace(updatedWorkspace);
+  };
+
   if (!workspace || loading) return <LoadingSkeleton />;
   return (
     <div id="workspace-agent-settings-container">
@@ -78,42 +86,62 @@ export default function WorkspaceAgentConfiguration({ workspace }) {
         onSubmit={handleUpdate}
         onChange={() => setHasChanges(true)}
         id="agent-settings-form"
-        className="w-1/2 flex flex-col gap-y-6"
+        className="w-full flex flex-col gap-y-6"
       >
-        <AgentLLMSelection
-          settings={settings}
-          workspace={workspace}
-          setHasChanges={setHasChanges}
-        />
-        {(!user || user?.role === "admin") && (
-          <>
-            {!hasChanges && (
+        <div className="w-1/2 flex flex-col gap-y-6">
+          <AgentLLMSelection
+            settings={settings}
+            workspace={currentWorkspace}
+            setHasChanges={setHasChanges}
+          />
+
+          {hasChanges && (
+            <button
+              type="submit"
+              form="agent-settings-form"
+              className="w-fit transition-all duration-300 border border-slate-200 px-5 py-2.5 rounded-lg text-white text-sm items-center flex gap-x-2 hover:bg-slate-200 hover:text-slate-800 focus:ring-gray-800"
+            >
+              {saving ? "Updating agent..." : "Update workspace agent"}
+            </button>
+          )}
+        </div>
+
+        <div className="bg-white/10 h-[1px] w-full" />
+
+        <div className="w-full flex flex-col gap-y-6">
+          <OverrideAgentSettingsToggle
+            workspace={currentWorkspace}
+            onToggle={handleWorkspaceUpdate}
+          />
+
+          {currentWorkspace?.overrideGlobalAgentSettings && (
+            <>
+              <div className="bg-white/10 h-[1px] w-full" />
+              <WorkspaceSkillsSelector workspace={currentWorkspace} />
+              <div className="bg-white/10 h-[1px] w-full" />
+              <WorkspaceMCPServersSelector workspace={currentWorkspace} />
+            </>
+          )}
+
+          {(!user || user?.role === "admin") && !hasChanges && (
+            <>
+              <div className="bg-white/10 h-[1px] w-full" />
               <div className="flex flex-col gap-y-4">
                 <a
                   className="w-fit transition-all duration-300 border border-slate-200 px-5 py-2.5 rounded-lg text-white text-sm items-center flex gap-x-2 hover:bg-slate-200 hover:text-slate-800 focus:ring-gray-800"
                   href={paths.settings.agentSkills()}
                 >
-                  Configure Agent Skills
+                  Configure Global Agent Skills
                 </a>
                 <p className="text-white text-opacity-60 text-xs font-medium">
                   Customize and enhance the default agent's capabilities by
                   enabling or disabling specific skills. These settings will be
-                  applied across all workspaces.
+                  applied across all workspaces unless overridden.
                 </p>
               </div>
-            )}
-          </>
-        )}
-
-        {hasChanges && (
-          <button
-            type="submit"
-            form="agent-settings-form"
-            className="w-fit transition-all duration-300 border border-slate-200 px-5 py-2.5 rounded-lg text-white text-sm items-center flex gap-x-2 hover:bg-slate-200 hover:text-slate-800 focus:ring-gray-800"
-          >
-            {saving ? "Updating agent..." : "Update workspace agent"}
-          </button>
-        )}
+            </>
+          )}
+        </div>
       </form>
     </div>
   );

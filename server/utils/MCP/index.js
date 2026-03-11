@@ -1,4 +1,5 @@
 const MCPHypervisor = require("./hypervisor");
+const WorkspaceAgentConfig = require("../agents/workspaceAgentConfig");
 
 class MCPCompatibilityLayer extends MCPHypervisor {
   static _instance;
@@ -12,11 +13,32 @@ class MCPCompatibilityLayer extends MCPHypervisor {
   /**
    * Get all of the active MCP servers as plugins we can load into agents.
    * This will also boot all MCP servers if they have not been started yet.
+   * @param {string|null} workspaceSlug - Optional workspace slug for workspace-specific filtering
    * @returns {Promise<string[]>} Array of flow names in @@mcp_{name} format
    */
-  async activeMCPServers() {
+  async activeMCPServers(workspaceSlug = null) {
+    // Boot all global servers
     await this.bootMCPServers();
-    return Object.keys(this.mcps).flatMap((name) => `@@mcp_${name}`);
+    
+    const globalServerNames = this.mcpServerConfigs.map(s => s.name);
+    
+    // If no workspace slug, return all global servers
+    if (!workspaceSlug) {
+      return Object.keys(this.mcps)
+        .filter(name => globalServerNames.includes(name))
+        .map(name => `@@mcp_${name}`);
+    }
+
+    // Get enabled servers for this workspace
+    const enabledServers = WorkspaceAgentConfig.getEnabledMcpServers(workspaceSlug);
+    
+    // Only return servers that are:
+    // 1. In the global config
+    // 2. Currently running
+    // 3. Enabled for this workspace
+    return Object.keys(this.mcps)
+      .filter(name => globalServerNames.includes(name) && enabledServers.includes(name))
+      .map(name => `@@mcp_${name}`);
   }
 
   /**
@@ -113,36 +135,54 @@ class MCPCompatibilityLayer extends MCPHypervisor {
   /**
    * Returns the MCP servers that were loaded or attempted to be loaded
    * so that we can display them in the frontend for review or error logging.
+   * @param {string|null} workspaceSlug - Optional workspace slug for workspace-specific servers
    * @returns {Promise<{
    *   name: string,
    *   running: boolean,
    *   tools: {name: string, description: string, inputSchema: Object}[],
    *   process: {pid: number, cmd: string}|null,
-   *   error: string|null
+   *   error: string|null,
+   *   source: 'global' | 'workspace'
    * }[]>} - The active MCP servers
    */
-  async servers() {
+  async servers(workspaceSlug = null) {
     await this.bootMCPServers();
     const servers = [];
-    for (const [name, result] of Object.entries(this.mcpLoadingResults)) {
-      const config = this.mcpServerConfigs.find((s) => s.name === name);
+    
+    // Get merged servers if workspace slug provided
+    const serverConfigs = workspaceSlug 
+      ? this.getMergedMCPServers(workspaceSlug)
+      : this.mcpServerConfigs.map(s => ({ ...s, source: 'global' }));
 
-      if (result.status === "failed") {
+    for (const serverConfig of serverConfigs) {
+      const name = serverConfig.name;
+      const result = this.mcpLoadingResults[name];
+
+      if (result && result.status === "failed") {
         servers.push({
           name,
-          config: config?.server || null,
+          config: serverConfig.server || null,
           running: false,
           tools: [],
           error: result.message,
           process: null,
+          source: serverConfig.source || 'global',
         });
         continue;
       }
 
       const mcp = this.mcps[name];
       if (!mcp) {
-        delete this.mcpLoadingResults[name];
-        delete this.mcps[name];
+        // Server not running - might be workspace-specific and not started
+        servers.push({
+          name,
+          config: serverConfig.server || null,
+          running: false,
+          tools: [],
+          error: null,
+          process: null,
+          source: serverConfig.source || 'global',
+        });
         continue;
       }
 
@@ -152,13 +192,14 @@ class MCPCompatibilityLayer extends MCPHypervisor {
       );
       servers.push({
         name,
-        config: config?.server || null,
+        config: serverConfig.server || null,
         running: online,
         tools,
         error: null,
         process: {
           pid: mcp.transport?.process?.pid || null,
         },
+        source: serverConfig.source || 'global',
       });
     }
     return servers;

@@ -6,6 +6,7 @@ const ImportedPlugin = require("./imported");
 const { AgentFlows } = require("../agentFlows");
 const MCPCompatibilityLayer = require("../MCP");
 const { SystemPromptVariables } = require("../../models/systemPromptVariables");
+const WorkspaceAgentConfig = require("./workspaceAgentConfig");
 
 // This is a list of skills that are built-in and default enabled.
 const DEFAULT_SKILLS = [
@@ -34,13 +35,29 @@ const WORKSPACE_AGENT = {
    * @returns {Promise<{ role: string, functions: object[] }>}
    */
   getDefinition: async (provider = null, workspace = null, user = null) => {
+    // Check if workspace has override enabled
+    const useWorkspaceOverride = workspace?.overrideGlobalAgentSettings === true;
+    
+    let skills = [];
+    let mcpServers = [];
+
+    if (useWorkspaceOverride && workspace?.slug) {
+      // Use workspace-specific configuration (filtered from global)
+      skills = await WorkspaceAgentConfig.getEnabledSkills(workspace.slug);
+      mcpServers = await new MCPCompatibilityLayer().activeMCPServers(workspace.slug);
+    } else {
+      // Use ALL global configuration (no filtering)
+      skills = await agentSkillsFromSystemSettings();
+      mcpServers = await new MCPCompatibilityLayer().activeMCPServers();
+    }
+
     return {
       role: await Provider.systemPrompt({ provider, workspace, user }),
       functions: [
-        ...(await agentSkillsFromSystemSettings()),
+        ...skills,
         ...ImportedPlugin.activeImportedPlugins(),
         ...AgentFlows.activeFlowPlugins(),
-        ...(await new MCPCompatibilityLayer().activeMCPServers()),
+        ...mcpServers,
       ],
     };
   },

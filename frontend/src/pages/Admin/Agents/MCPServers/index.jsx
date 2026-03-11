@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { titleCase } from "text-case";
-import { BookOpenText, ArrowClockwise } from "@phosphor-icons/react";
+import { BookOpenText, ArrowClockwise, PencilSimple } from "@phosphor-icons/react";
 import MCPLogo from "@/media/agents/mcp-logo.svg";
 import MCPServers from "@/models/mcpServers";
 import showToast from "@/utils/toast";
+import JsonEditorModal from "@/components/JsonEditor/JsonEditorModal";
 
 export function MCPServerHeader({
   setMcpServers,
@@ -11,15 +12,32 @@ export function MCPServerHeader({
   children,
 }) {
   const [loadingMcpServers, setLoadingMcpServers] = useState(false);
+  const [showJsonEditor, setShowJsonEditor] = useState(false);
+  const [mcpConfig, setMcpConfig] = useState({ mcpServers: {} });
+
   useEffect(() => {
-    async function fetchMCPServers() {
-      setLoadingMcpServers(true);
-      const { servers = [] } = await MCPServers.listServers();
-      setMcpServers(servers);
-      setLoadingMcpServers(false);
-    }
-    fetchMCPServers();
+    fetchMCPConfig();
   }, []);
+
+  const fetchMCPConfig = async () => {
+    setLoadingMcpServers(true);
+    
+    // Fetch both servers and config
+    const [serversResult, configResult] = await Promise.all([
+      MCPServers.listServers(),
+      MCPServers.getConfig(),
+    ]);
+    
+    if (serversResult.success) {
+      setMcpServers(serversResult.servers || []);
+    }
+    
+    if (configResult.success && configResult.config) {
+      setMcpConfig(configResult.config);
+    }
+    
+    setLoadingMcpServers(false);
+  };
 
   // Refresh the list of MCP servers
   const refreshMCPServers = () => {
@@ -33,6 +51,8 @@ export function MCPServerHeader({
         .then(({ servers = [] }) => {
           setSelectedMcpServer(null);
           setMcpServers(servers);
+          // Refresh config too
+          fetchMCPConfig();
         })
         .catch((err) => {
           console.error(err);
@@ -41,6 +61,30 @@ export function MCPServerHeader({
         .finally(() => {
           setLoadingMcpServers(false);
         });
+    }
+  };
+
+  const handleSaveJson = async (parsedJson) => {
+    try {
+      const { success, message, error } = await MCPServers.updateConfig(parsedJson);
+      
+      if (success) {
+        showToast(
+          message || "MCP configuration updated successfully. Servers reloaded.",
+          "success",
+          { clear: true }
+        );
+        // Refresh the server list
+        await fetchMCPConfig();
+      } else {
+        showToast(`Error: ${error || "Failed to update configuration"}`, "error", {
+          clear: true,
+        });
+        throw new Error(error);
+      }
+    } catch (error) {
+      console.error("Error saving MCP config:", error);
+      throw error;
     }
   };
 
@@ -62,6 +106,14 @@ export function MCPServerHeader({
           </a>
           <button
             type="button"
+            onClick={() => setShowJsonEditor(true)}
+            className="border-none text-theme-text-secondary hover:text-cta-button flex items-center gap-x-1"
+          >
+            <PencilSimple size={16} />
+            <p className="text-sm">Edit JSON</p>
+          </button>
+          <button
+            type="button"
             onClick={refreshMCPServers}
             disabled={loadingMcpServers}
             className="border-none text-theme-text-secondary hover:text-cta-button flex items-center gap-x-1"
@@ -77,6 +129,16 @@ export function MCPServerHeader({
         </div>
       </div>
       {children({ loadingMcpServers })}
+      
+      <JsonEditorModal
+        isOpen={showJsonEditor}
+        onClose={() => setShowJsonEditor(false)}
+        initialValue={mcpConfig}
+        onSave={handleSaveJson}
+        title="Edit Global MCP Servers Configuration"
+        description='Edit the global MCP servers configuration. The structure should be: { "mcpServers": { "server-name": { "command": "...", "args": [...] } } }. Changes will reload all MCP servers.'
+        readOnly={false}
+      />
     </>
   );
 }

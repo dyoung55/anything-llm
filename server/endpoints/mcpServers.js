@@ -95,6 +95,72 @@ function mcpServersEndpoints(app) {
       }
     }
   );
+
+  app.get(
+    "/mcp-servers/config",
+    [validatedRequest, flexUserRoleValid([ROLES.admin])],
+    async (_request, response) => {
+      try {
+        const mcp = new MCPCompatibilityLayer();
+        const config = mcp.mcpServerConfigs;
+        const configObject = { mcpServers: {} };
+        config.forEach((server) => {
+          configObject.mcpServers[server.name] = server.server;
+        });
+        return response.status(200).json({
+          success: true,
+          config: configObject,
+        });
+      } catch (error) {
+        console.error("Error getting MCP config:", error);
+        return response.status(500).json({
+          success: false,
+          error: error.message,
+        });
+      }
+    }
+  );
+
+  app.post(
+    "/mcp-servers/config",
+    [validatedRequest, flexUserRoleValid([ROLES.admin])],
+    async (request, response) => {
+      try {
+        const { config } = reqBody(request);
+        
+        if (!config || typeof config !== "object" || !config.mcpServers) {
+          return response.status(400).json({
+            success: false,
+            error: "Invalid configuration format. Expected { mcpServers: {...} }",
+          });
+        }
+
+        const fs = require("fs");
+        const mcp = new MCPCompatibilityLayer();
+        
+        // Write the config to the file
+        fs.writeFileSync(
+          mcp.mcpServerJSONPath,
+          JSON.stringify(config, null, 2),
+          "utf8"
+        );
+
+        // Reload servers to apply changes
+        await mcp.reloadMCPServers();
+
+        return response.status(200).json({
+          success: true,
+          message: "MCP configuration updated successfully. Servers reloaded.",
+        });
+      } catch (error) {
+        console.error("Error updating MCP config:", error);
+        return response.status(500).json({
+          success: false,
+          error: error.message,
+        });
+      }
+    }
+  );
 }
 
 module.exports = { mcpServersEndpoints };

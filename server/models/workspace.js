@@ -56,6 +56,7 @@ const Workspace = {
     "agentModel",
     "queryRefusalResponse",
     "vectorSearchMode",
+    "overrideGlobalAgentSettings",
   ],
 
   validations: {
@@ -133,6 +134,10 @@ const Workspace = {
       )
         return "default";
       return value;
+    },
+    overrideGlobalAgentSettings: (value) => {
+      if (value === null || value === undefined) return false;
+      return Boolean(value);
     },
   },
 
