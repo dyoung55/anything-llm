@@ -30,8 +30,20 @@ function getDefaultFilename(darkMode = true) {
   return darkMode ? LOGO_FILENAME : LOGO_FILENAME_DARK;
 }
 
-async function determineLogoFilepath(defaultFilename = LOGO_FILENAME) {
-  const currentLogoFilename = await SystemSettings.currentLogoFilename();
+async function currentLogoFilenameLight() {
+  try {
+    const setting = await SystemSettings.get({ label: "logo_filename_light" });
+    return setting?.value || null;
+  } catch (error) {
+    console.error(error.message);
+    return null;
+  }
+}
+
+async function determineLogoFilepath(defaultFilename = LOGO_FILENAME, isLightMode = false) {
+  const currentLogoFilename = isLightMode 
+    ? await currentLogoFilenameLight()
+    : await SystemSettings.currentLogoFilename();
   const basePath = process.env.STORAGE_DIR
     ? path.join(process.env.STORAGE_DIR, "assets")
     : path.join(__dirname, "../../storage/assets");
@@ -110,5 +122,7 @@ module.exports = {
   getDefaultFilename,
   determineLogoFilepath,
   isDefaultFilename,
+  currentLogoFilenameLight,
   LOGO_FILENAME,
+  LOGO_FILENAME_DARK,
 };

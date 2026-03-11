@@ -208,9 +208,27 @@ class MetaGenerator {
       { label: "meta_page_favicon" },
       null
     );
+    const customDescription = await SystemSettings.getValueOrFallback(
+      { label: "meta_page_description" },
+      null
+    );
+    const customOgImage = await SystemSettings.getValueOrFallback(
+      { label: "meta_page_og_image" },
+      null
+    );
+    const customOgUrl = await SystemSettings.getValueOrFallback(
+      { label: "meta_page_og_url" },
+      null
+    );
 
     // If nothing defined - assume defaults.
-    if (customTitle === null && faviconURL === null) {
+    if (
+      customTitle === null &&
+      faviconURL === null &&
+      customDescription === null &&
+      customOgImage === null &&
+      customOgUrl === null
+    ) {
       this.#customConfig = this.#defaultMeta();
     } else {
       // When custom settings exist, include all default meta tags but override specific ones
@@ -265,6 +283,89 @@ class MetaGenerator {
               content:
                 customTitle ??
                 "AnythingLLM | Your personal LLM trained on anything",
+            },
+          };
+        }
+        // Override meta description
+        if (tag.tag === "meta" && tag.props?.description === "title") {
+          return {
+            tag: "meta",
+            props: {
+              description: "title",
+              content:
+                customDescription ??
+                "AnythingLLM | Your personal LLM trained on anything",
+            },
+          };
+        }
+        // Override og:description
+        if (tag.tag === "meta" && tag.props?.property === "og:description") {
+          return {
+            tag: "meta",
+            props: {
+              property: "og:description",
+              content:
+                customDescription ??
+                "AnythingLLM | Your personal LLM trained on anything",
+            },
+          };
+        }
+        // Override og:image
+        if (tag.tag === "meta" && tag.props?.property === "og:image") {
+          return {
+            tag: "meta",
+            props: {
+              property: "og:image",
+              content:
+                customOgImage ??
+                "https://raw.githubusercontent.com/Mintplex-Labs/anything-llm/master/images/promo.png",
+            },
+          };
+        }
+        // Override og:url
+        if (tag.tag === "meta" && tag.props?.property === "og:url") {
+          return {
+            tag: "meta",
+            props: {
+              property: "og:url",
+              content: customOgUrl ?? "https://anythingllm.com",
+            },
+          };
+        }
+        // Override twitter:description
+        if (
+          tag.tag === "meta" &&
+          tag.props?.property === "twitter:description"
+        ) {
+          return {
+            tag: "meta",
+            props: {
+              property: "twitter:description",
+              content:
+                customDescription ??
+                "AnythingLLM | Your personal LLM trained on anything",
+            },
+          };
+        }
+        // Override twitter:image
+        if (tag.tag === "meta" && tag.props?.property === "twitter:image") {
+          return {
+            tag: "meta",
+            props: {
+              property: "twitter:image",
+              content:
+                customOgImage ??
+                "https://raw.githubusercontent.com/Mintplex-Labs/anything-llm/master/images/promo.png",
+            },
+          };
+        }
+        // Override twitter:url
+        if (tag.tag === "meta" && tag.props?.property === "twitter:url") {
+          return {
+            tag: "meta",
+            props: {
+              property: "twitter:url",
+              content: customOgUrl ?? "https://anythingllm.com",
             },
           };
         }

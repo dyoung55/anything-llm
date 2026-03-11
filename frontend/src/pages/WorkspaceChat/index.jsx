@@ -50,11 +50,9 @@ function ShowWorkspaceChat() {
   }, []);
 
   return (
-    <>
-      <div className="w-screen h-screen overflow-hidden bg-theme-bg-container flex">
-        {!isMobile && <Sidebar />}
-        <WorkspaceChatContainer loading={loading} workspace={workspace} />
-      </div>
-    </>
+    <div className="w-full h-full overflow-hidden bg-theme-bg-container flex">
+      {!isMobile && <Sidebar />}
+      <WorkspaceChatContainer loading={loading} workspace={workspace} />
+    </div>
   );
 }

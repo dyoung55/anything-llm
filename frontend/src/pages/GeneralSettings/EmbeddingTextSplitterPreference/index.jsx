@@ -86,7 +86,7 @@ export default function EmbeddingTextSplitterPreference() {
   }, []);
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-theme-bg-container flex">
+    <div className="w-full h-full overflow-hidden bg-theme-bg-container flex">
       <Sidebar />
       {loading ? (
         <div

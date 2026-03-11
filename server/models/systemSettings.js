@@ -39,9 +39,21 @@ const SystemSettings = {
     "feature_flags",
     "meta_page_title",
     "meta_page_favicon",
+    "meta_page_description",
+    "meta_page_og_image",
+    "meta_page_og_url",
+    "custom_theme_colors",
+    "custom_banner_enabled",
+    "custom_banner_text",
+    "custom_banner_bg_color",
+    "custom_banner_text_color",
+    "custom_banner_link",
+    "custom_banner_link_text",
+    "custom_banner_reappear_hours",
   ],
   supportedFields: [
     "logo_filename",
+    "logo_filename_light",
     "telemetry_id",
     "footer_data",
     "support_email",
@@ -58,6 +70,21 @@ const SystemSettings = {
     // Meta page customization
     "meta_page_title",
     "meta_page_favicon",
+    "meta_page_description",
+    "meta_page_og_image",
+    "meta_page_og_url",
+
+    // Theme customization
+    "custom_theme_colors",
+
+    // Custom banner settings
+    "custom_banner_enabled",
+    "custom_banner_text",
+    "custom_banner_bg_color",
+    "custom_banner_text_color",
+    "custom_banner_link",
+    "custom_banner_link_text",
+    "custom_banner_reappear_hours",
 
     // beta feature flags
     "experimental_live_file_sync",
@@ -195,6 +222,38 @@ const SystemSettings = {
         new MetaGenerator().clearConfig();
       }
     },
+    meta_page_description: (description) => {
+      try {
+        if (typeof description !== "string" || !description) return null;
+        return String(description);
+      } catch {
+        return null;
+      } finally {
+        new MetaGenerator().clearConfig();
+      }
+    },
+    meta_page_og_image: (imageUrl) => {
+      if (!imageUrl) return null;
+      try {
+        const url = new URL(imageUrl);
+        return url.toString();
+      } catch {
+        return null;
+      } finally {
+        new MetaGenerator().clearConfig();
+      }
+    },
+    meta_page_og_url: (siteUrl) => {
+      if (!siteUrl) return null;
+      try {
+        const url = new URL(siteUrl);
+        return url.toString();
+      } catch {
+        return null;
+      } finally {
+        new MetaGenerator().clearConfig();
+      }
+    },
     hub_api_key: (apiKey) => {
       if (!apiKey) return null;
       return String(apiKey);
@@ -204,6 +263,50 @@ const SystemSettings = {
       if (prompt.trim() === SystemSettings.saneDefaultSystemPrompt)
         return SystemSettings.saneDefaultSystemPrompt;
       return String(prompt.trim());
+    },
+    custom_banner_enabled: (value) => {
+      if (value === "true" || value === true) return "true";
+      return "false";
+    },
+    custom_banner_text: (text) => {
+      if (typeof text !== "string" || !text) return null;
+      return String(text);
+    },
+    custom_banner_bg_color: (color) => {
+      if (typeof color !== "string" || !color) return null;
+      if (!/^#[0-9A-F]{6}$/i.test(color)) return null;
+      return String(color);
+    },
+    custom_banner_text_color: (color) => {
+      if (typeof color !== "string" || !color) return null;
+      if (!/^#[0-9A-F]{6}$/i.test(color)) return null;
+      return String(color);
+    },
+    custom_banner_link: (link) => {
+      if (!link) return null;
+      if (typeof link !== "string") return null;
+      return String(link);
+    },
+    custom_banner_link_text: (text) => {
+      if (!text) return null;
+      if (typeof text !== "string") return null;
+      return String(text);
+    },
+    custom_banner_reappear_hours: (hours) => {
+      if (!hours) return null;
+      const parsed = parseInt(hours);
+      if (isNaN(parsed) || parsed < 0) return null;
+      return parsed.toString();
+    },
+    custom_theme_colors: (colors) => {
+      if (!colors) return null;
+      try {
+        const parsed = typeof colors === "string" ? JSON.parse(colors) : colors;
+        if (typeof parsed !== "object") return null;
+        return JSON.stringify(parsed);
+      } catch {
+        return null;
+      }
     },
   },
   currentSettings: async function () {

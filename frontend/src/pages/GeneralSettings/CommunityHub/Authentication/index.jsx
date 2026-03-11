@@ -107,7 +107,7 @@ export default function CommunityHubAuthentication() {
   } = useCommunityHubAuthentication();
   if (loading) return <FullScreenLoader />;
   return (
-    <div className="w-screen h-screen overflow-hidden bg-theme-bg-container flex">
+    <div className="w-full h-full overflow-hidden bg-theme-bg-container flex">
       <Sidebar />
       <ContextualSaveBar
         showing={hasChanges}

@@ -26,7 +26,9 @@ const {
   validFilename,
   renameLogoFile,
   removeCustomLogo,
+  currentLogoFilenameLight,
   LOGO_FILENAME,
+  LOGO_FILENAME_DARK,
   isDefaultFilename,
 } = require("../utils/files/logo");
 const { Telemetry } = require("../models/telemetry");
@@ -658,8 +660,9 @@ function systemEndpoints(app) {
     try {
       const darkMode =
         !request?.query?.theme || request?.query?.theme === "default";
+      const isLightMode = request?.query?.theme === "light";
       const defaultFilename = getDefaultFilename(darkMode);
-      const logoPath = await determineLogoFilepath(defaultFilename);
+      const logoPath = await determineLogoFilepath(defaultFilename, isLightMode);
       const { found, buffer, size, mime } = fetchLogo(logoPath);
 
       if (!found) {
@@ -667,7 +670,9 @@ function systemEndpoints(app) {
         return;
       }
 
-      const currentLogoFilename = await SystemSettings.currentLogoFilename();
+      const currentLogoFilename = isLightMode
+        ? await currentLogoFilenameLight()
+        : await SystemSettings.currentLogoFilename();
       response.writeHead(200, {
         "Access-Control-Expose-Headers":
           "Content-Disposition,X-Is-Custom-Logo,Content-Type,Content-Length",
@@ -728,6 +733,68 @@ function systemEndpoints(app) {
       response.status(200).json({ customAppName: customAppName });
     } catch (error) {
       console.error("Error fetching custom app name:", error);
+      response.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/system/banner-settings", async (_, response) => {
+    try {
+      const enabled =
+        (await SystemSettings.get({ label: "custom_banner_enabled" }))?.value ===
+        "true";
+      const text =
+        (await SystemSettings.get({ label: "custom_banner_text" }))?.value ??
+        null;
+      const bgColor =
+        (await SystemSettings.get({ label: "custom_banner_bg_color" }))
+          ?.value ?? null;
+      const textColor =
+        (await SystemSettings.get({ label: "custom_banner_text_color" }))
+          ?.value ?? null;
+      const link =
+        (await SystemSettings.get({ label: "custom_banner_link" }))?.value ??
+        null;
+      const linkText =
+        (await SystemSettings.get({ label: "custom_banner_link_text" }))
+          ?.value ?? null;
+
+      response.status(200).json({
+        enabled,
+        text,
+        bgColor,
+        textColor,
+        link,
+        linkText,
+      });
+    } catch (error) {
+      console.error("Error fetching banner settings:", error);
+      response.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/system/banner-timer", async (_, response) => {
+    try {
+      const timerHours = await SystemSettings.get({
+        label: "custom_banner_reappear_hours",
+      });
+      response.status(200).json({
+        hours: timerHours?.value ? parseInt(timerHours.value) : null,
+      });
+    } catch (error) {
+      console.error("Error fetching banner timer:", error);
+      response.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/system/theme-colors", async (_, response) => {
+    try {
+      const colorsJson =
+        (await SystemSettings.get({ label: "custom_theme_colors" }))?.value ??
+        null;
+      const colors = colorsJson ? JSON.parse(colorsJson) : null;
+      response.status(200).json({ colors });
+    } catch (error) {
+      console.error("Error fetching theme colors:", error);
       response.status(500).json({ message: "Internal server error" });
     }
   });
@@ -957,6 +1024,68 @@ function systemEndpoints(app) {
         });
       } catch (error) {
         console.error("Error processing the logo removal:", error);
+        response.status(500).json({ message: "Error removing the logo." });
+      }
+    }
+  );
+
+  app.post(
+    "/system/upload-logo-light",
+    [
+      validatedRequest,
+      flexUserRoleValid([ROLES.admin, ROLES.manager]),
+      handleAssetUpload,
+    ],
+    async (request, response) => {
+      if (!request?.file || !request?.file.originalname) {
+        return response.status(400).json({ message: "No logo file provided." });
+      }
+
+      if (!validFilename(request.file.originalname)) {
+        return response.status(400).json({
+          message: "Invalid file name. Please choose a different file.",
+        });
+      }
+
+      try {
+        const newFilename = await renameLogoFile(request.file.originalname);
+        const existingLogoFilename = await currentLogoFilenameLight();
+        await removeCustomLogo(existingLogoFilename);
+
+        const { success, error } = await SystemSettings._updateSettings({
+          logo_filename_light: newFilename,
+        });
+
+        return response.status(success ? 200 : 500).json({
+          message: success
+            ? "Light mode logo uploaded successfully."
+            : error || "Failed to update with new logo.",
+        });
+      } catch (error) {
+        console.error("Error processing the light logo upload:", error);
+        response.status(500).json({ message: "Error uploading the logo." });
+      }
+    }
+  );
+
+  app.get(
+    "/system/remove-logo-light",
+    [validatedRequest, flexUserRoleValid([ROLES.admin, ROLES.manager])],
+    async (_request, response) => {
+      try {
+        const currentLogoFilename = await currentLogoFilenameLight();
+        await removeCustomLogo(currentLogoFilename);
+        const { success, error } = await SystemSettings._updateSettings({
+          logo_filename_light: LOGO_FILENAME_DARK,
+        });
+
+        return response.status(success ? 200 : 500).json({
+          message: success
+            ? "Light mode logo removed successfully."
+            : error || "Failed to update with new logo.",
+        });
+      } catch (error) {
+        console.error("Error processing the light logo removal:", error);
         response.status(500).json({ message: "Error removing the logo." });
       }
     }

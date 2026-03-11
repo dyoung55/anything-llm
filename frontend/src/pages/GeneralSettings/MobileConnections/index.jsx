@@ -43,7 +43,7 @@ export default function MobileDevices() {
   };
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-theme-bg-container flex md:mt-0 mt-6">
+    <div className="w-full h-full overflow-hidden bg-theme-bg-container flex md:mt-0 mt-6">
       <Sidebar />
       <div
         style={{ height: isMobile ? "100%" : "calc(100% - 32px)" }}

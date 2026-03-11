@@ -109,7 +109,7 @@ export default function DefaultSystemPrompt() {
   };
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-theme-bg-container flex">
+    <div className="w-full h-full overflow-hidden bg-theme-bg-container flex">
       <SettingsSidebar />
       <div
         style={{ height: isMobile ? "100%" : "calc(100% - 32px)" }}

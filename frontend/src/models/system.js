@@ -291,6 +291,21 @@ const System = {
         return { success: false, error: e.message };
       });
   },
+  uploadLogoLight: async function (formData) {
+    return await fetch(`${API_BASE}/system/upload-logo-light`, {
+      method: "POST",
+      body: formData,
+      headers: baseHeaders(),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error uploading light mode logo.");
+        return { success: true, error: null };
+      })
+      .catch((e) => {
+        console.log(e);
+        return { success: false, error: e.message };
+      });
+  },
   fetchCustomFooterIcons: async function () {
     const cache = window.localStorage.getItem(this.cacheKeys.footerIcons);
     const { data, lastFetched } = cache
@@ -498,6 +513,19 @@ const System = {
       .then((res) => {
         if (res.ok) return { success: true, error: null };
         throw new Error("Error removing logo!");
+      })
+      .catch((e) => {
+        console.log(e);
+        return { success: false, error: e.message };
+      });
+  },
+  removeCustomLogoLight: async function () {
+    return await fetch(`${API_BASE}/system/remove-logo-light`, {
+      headers: baseHeaders(),
+    })
+      .then((res) => {
+        if (res.ok) return { success: true, error: null };
+        throw new Error("Error removing light mode logo!");
       })
       .catch((e) => {
         console.log(e);
@@ -863,6 +891,40 @@ const System = {
       .catch((e) => {
         console.error("Failed to validate SQL connection:", e);
         return { success: false, error: e.message };
+      });
+  },
+
+  fetchBannerSettings: async function () {
+    return await fetch(`${API_BASE}/system/banner-settings`, {
+      method: "GET",
+      cache: "no-cache",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch banner settings.");
+        return res.json();
+      })
+      .catch((e) => {
+        console.error(e);
+        return {
+          enabled: false,
+          text: null,
+          bgColor: null,
+          textColor: null,
+          link: null,
+          linkText: null,
+        };
+      });
+  },
+  fetchBannerTimer: async function () {
+    return await fetch(`${API_BASE}/system/banner-timer`, {
+      method: "GET",
+      cache: "no-cache",
+    })
+      .then((res) => res.json())
+      .then((data) => data.hours)
+      .catch((e) => {
+        console.log(e);
+        return null;
       });
   },
 

@@ -4,12 +4,14 @@ import { useTranslation } from "react-i18next";
 import LanguagePreference from "../components/LanguagePreference";
 import ThemePreference from "../components/ThemePreference";
 import { MessageDirection } from "../components/MessageDirection";
+import CustomBannerSettings from "../components/CustomBannerSettings";
+import ThemeColorCustomization from "../components/ThemeColorCustomization";
 
 export default function InterfaceSettings() {
   const { t } = useTranslation();
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-theme-bg-container flex">
+    <div className="w-full h-full overflow-hidden bg-theme-bg-container flex">
       <Sidebar />
       <div
         style={{ height: isMobile ? "100%" : "calc(100% - 32px)" }}
@@ -26,7 +28,9 @@ export default function InterfaceSettings() {
               {t("customization.interface.description")}
             </p>
           </div>
+          <CustomBannerSettings />
           <ThemePreference />
+          <ThemeColorCustomization />
           <LanguagePreference />
           <MessageDirection />
         </div>

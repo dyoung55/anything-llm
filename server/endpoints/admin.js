@@ -403,6 +403,11 @@ function adminEndpoints(app) {
                 await SystemSettings.getValueOrFallback({ label }, null);
               break;
             default:
+              // For any other public field, return the value from the database
+              // This handles all newly added fields without requiring explicit cases
+              if (SystemSettings.publicFields.includes(label)) {
+                requestedSettings[label] = setting?.value || null;
+              }
               break;
           }
         }

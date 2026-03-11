@@ -192,7 +192,7 @@ export default function GeneralVectorDatabase() {
     VECTOR_DBS.find((vdb) => vdb.value === selectedVDB) ?? VECTOR_DBS[0];
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-theme-bg-container flex">
+    <div className="w-full h-full overflow-hidden bg-theme-bg-container flex">
       <Sidebar />
       {loading ? (
         <div
