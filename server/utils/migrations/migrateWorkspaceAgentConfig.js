@@ -59,6 +59,10 @@ async function migrateWorkspaceAgentConfig() {
 
   if (workspaceSlugs.size === 0) {
     console.log("[Migration] No workspace configs to migrate");
+    const pluginsDir = path.dirname(migrationFlagPath);
+    if (!fs.existsSync(pluginsDir)) {
+      fs.mkdirSync(pluginsDir, { recursive: true });
+    }
     fs.writeFileSync(migrationFlagPath, new Date().toISOString(), "utf8");
     return;
   }
@@ -140,6 +144,10 @@ async function migrateWorkspaceAgentConfig() {
   }
 
   // Create migration flag
+  const pluginsDir = path.dirname(migrationFlagPath);
+  if (!fs.existsSync(pluginsDir)) {
+    fs.mkdirSync(pluginsDir, { recursive: true });
+  }
   fs.writeFileSync(migrationFlagPath, new Date().toISOString(), "utf8");
 
   console.log(
