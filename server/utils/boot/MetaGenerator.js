@@ -412,6 +412,16 @@ class MetaGenerator {
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
             ${this.#assembleMeta()}
+            
+            <!-- Google Analytics -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-H560JKLXL5"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-H560JKLXL5');
+            </script>
+            
             <script type="module" crossorigin src="/index.js"></script>
             <link rel="stylesheet" href="/index.css">
           </head>
