@@ -405,6 +405,19 @@ class MetaGenerator {
    */
   async generate(response, code = 200) {
     if (this.#customConfig === null) await this.#fetchConfg();
+    const googleAnalyticsId = process.env.GOOGLE_ANALYTICS_ID;
+    const googleAnalyticsScript = googleAnalyticsId
+      ? `
+            <!-- Google Analytics -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${googleAnalyticsId}');
+            </script>
+            `
+      : "";
     response.status(code).send(`
        <!DOCTYPE html>
         <html lang="en">
@@ -412,16 +425,7 @@ class MetaGenerator {
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
             ${this.#assembleMeta()}
-            
-            <!-- Google Analytics -->
-            <script async src="https://www.googletagmanager.com/gtag/js?id=G-H560JKLXL5"></script>
-            <script>
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-H560JKLXL5');
-            </script>
-            
+            ${googleAnalyticsScript}
             <script type="module" crossorigin src="/index.js"></script>
             <link rel="stylesheet" href="/index.css">
           </head>
