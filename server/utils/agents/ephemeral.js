@@ -35,6 +35,8 @@ class EphemeralAgentHandler extends AgentHandler {
   #sessionId = null;
   /** @type {string|null} the prompt to use for the agent */
   #prompt = null;
+  /** @type {Array} the attachments to use for the agent */
+  #attachments = [];
   /** @type {string[]} the functions to load into the agent (Aibitat plugins) */
   #funcsToLoad = [];
 
@@ -54,7 +56,8 @@ class EphemeralAgentHandler extends AgentHandler {
    * prompt: string,
    * userId: import("@prisma/client").users["id"]|null,
    * threadId: import("@prisma/client").workspace_threads["id"]|null,
-   * sessionId: string|null
+   * sessionId: string|null,
+   * attachments: Array
    * }} parameters
    */
   constructor({
@@ -64,11 +67,13 @@ class EphemeralAgentHandler extends AgentHandler {
     userId = null,
     threadId = null,
     sessionId = null,
+    attachments = [],
   }) {
     super({ uuid });
     this.#invocationUUID = uuid;
     this.#workspace = workspace;
     this.#prompt = prompt;
+    this.#attachments = attachments;
 
     // Note: userId for ephemeral agent is only available
     // via the workspace-thread chat endpoints for the API
@@ -104,17 +109,21 @@ class EphemeralAgentHandler extends AgentHandler {
 
       const agentHistory = [];
       rawHistory.forEach((chatLog) => {
+        const parsedResponse = safeJsonParse(chatLog.response);
+        const attachments = parsedResponse?.attachments || [];
+
         agentHistory.push(
           {
             from: USER_AGENT.name,
             to: WORKSPACE_AGENT.name,
             content: chatLog.prompt,
+            attachments: attachments,
             state: "success",
           },
           {
             from: WORKSPACE_AGENT.name,
             to: USER_AGENT.name,
-            content: safeJsonParse(chatLog.response)?.text || "",
+            content: parsedResponse?.text || "",
             state: "success",
           }
         );
@@ -360,6 +369,7 @@ class EphemeralAgentHandler extends AgentHandler {
         invocation: {
           workspace: this.#workspace,
           workspace_id: this.#workspace.id,
+          attachments: this.#attachments,
         },
         log: this.log,
       },
@@ -387,6 +397,7 @@ class EphemeralAgentHandler extends AgentHandler {
       from: USER_AGENT.name,
       to: this.channel ?? WORKSPACE_AGENT.name,
       content: this.#prompt,
+      attachments: this.#attachments || [],
     });
   }
 

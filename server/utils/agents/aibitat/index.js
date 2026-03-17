@@ -563,6 +563,7 @@ ${this.getHistory({ to: route.to })
     return this.getHistory(route).map((c) => ({
       content: c.content,
       role: c.from === route.to ? "user" : "assistant",
+      ...(c.attachments ? { attachments: c.attachments } : {}),
     }));
   }
 

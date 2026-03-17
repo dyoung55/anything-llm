@@ -162,6 +162,7 @@ async function chatSync({
       userId: user?.id || null,
       threadId: thread?.id || null,
       sessionId,
+      attachments,
     });
 
     // Establish event listener that emulates websocket calls
@@ -505,6 +506,7 @@ async function streamChat({
       userId: user?.id || null,
       threadId: thread?.id || null,
       sessionId,
+      attachments,
     });
 
     // Establish event listener that emulates websocket calls

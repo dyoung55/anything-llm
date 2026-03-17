@@ -73,18 +73,44 @@ class OpenAIProvider extends Provider {
         return;
       }
 
+      const contentArray = [
+        {
+          type: message.role === "assistant" ? "output_text" : "input_text",
+          text: message.content,
+        },
+      ];
+
+      // Add attachments if present
+      if (message.attachments && message.attachments.length > 0) {
+        contentArray.push(...this.#formatAttachments(message.attachments));
+      }
+
+      const { attachments, ...messageWithoutAttachments } = message;
       formattedMessages.push({
+        ...messageWithoutAttachments,
         role: message.role,
-        content: [
-          {
-            type: message.role === "assistant" ? "output_text" : "input_text",
-            text: message.content,
-          },
-        ],
+        content: contentArray,
       });
     });
 
     return formattedMessages;
+  }
+
+  /**
+   * Format attachments for OpenAI's API
+   * @param {Array} attachments - Array of attachment objects
+   * @returns {Array} Formatted attachment content blocks
+   */
+  #formatAttachments(attachments = []) {
+    if (!attachments || !attachments.length) return [];
+    
+    return attachments.map((attachment) => ({
+      type: "image_url",
+      image_url: {
+        url: attachment.contentString,
+        detail: "high",
+      },
+    }));
   }
 
   /**

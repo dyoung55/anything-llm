@@ -11,6 +11,7 @@ async function grepAgents({
   workspace,
   user = null,
   thread = null,
+  attachments = [],
 }) {
   const agentHandles = WorkspaceAgentInvocation.parseAgents(message);
   // If workspace is in agent mode, always invoke agent regardless of @agent prefix
@@ -22,6 +23,7 @@ async function grepAgents({
       workspace: workspace,
       user: user,
       thread: thread,
+      attachments: attachments,
     });
 
     if (!newInvocation) {

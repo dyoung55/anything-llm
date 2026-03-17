@@ -9,6 +9,42 @@ class UnTooled {
     this.deduplicator = new Deduplicator();
   }
 
+  /**
+   * Format attachments for OpenAI-compatible APIs
+   * @param {Array} attachments - Array of attachment objects
+   * @returns {Array} Formatted attachment content blocks
+   */
+  #formatAttachments(attachments = []) {
+    if (!attachments || !attachments.length) return [];
+    
+    return attachments.map((attachment) => ({
+      type: "image_url",
+      image_url: {
+        url: attachment.contentString,
+        detail: "high",
+      },
+    }));
+  }
+
+  /**
+   * Format messages with attachments for API calls
+   * @param {Array} messages - Messages array
+   * @returns {Array} Messages with attachments formatted
+   */
+  #formatMessagesWithAttachments(messages) {
+    return messages.map((msg) => {
+      if (msg.attachments && msg.attachments.length > 0) {
+        const contentArray = Array.isArray(msg.content)
+          ? [...msg.content]
+          : [{ type: "text", text: msg.content }];
+        contentArray.push(...this.#formatAttachments(msg.attachments));
+        const { attachments, ...msgWithoutAttachments } = msg;
+        return { ...msgWithoutAttachments, content: contentArray };
+      }
+      return msg;
+    });
+  }
+
   cleanMsgs(messages) {
     const modifiedMessages = [];
     messages.forEach((msg) => {
@@ -147,7 +183,8 @@ ${JSON.stringify(def.parameters.properties, null, 4)}\n`;
       ["user", "assistant"].includes(msg.role)
     );
     if (history[history.length - 1].role !== "user") return null;
-    const historyMessages = this.buildToolCallMessages(history, functions);
+    const formattedHistory = this.#formatMessagesWithAttachments(history);
+    const historyMessages = this.buildToolCallMessages(formattedHistory, functions);
     const response = await chatCb({ messages: historyMessages });
 
     const call = safeJsonParse(response, null);
@@ -184,7 +221,8 @@ ${JSON.stringify(def.parameters.properties, null, 4)}\n`;
 
     const msgUUID = v4();
     let textResponse = "";
-    const historyMessages = this.buildToolCallMessages(history, functions);
+    const formattedHistory = this.#formatMessagesWithAttachments(history);
+    const historyMessages = this.buildToolCallMessages(formattedHistory, functions);
     const stream = await chatCb({ messages: historyMessages });
 
     eventHandler?.("reportStreamEvent", {

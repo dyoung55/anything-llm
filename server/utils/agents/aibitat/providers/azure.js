@@ -45,6 +45,23 @@ class AzureOpenAiProvider extends Provider {
   }
 
   /**
+   * Format attachments for OpenAI's API
+   * @param {Array} attachments - Array of attachment objects
+   * @returns {Array} Formatted attachment content blocks
+   */
+  #formatAttachments(attachments = []) {
+    if (!attachments || !attachments.length) return [];
+    
+    return attachments.map((attachment) => ({
+      type: "image_url",
+      image_url: {
+        url: attachment.contentString,
+        detail: "high",
+      },
+    }));
+  }
+
+  /**
    * Format messages to use tool calling format instead of legacy function format.
    * Converts role: "function" messages to role: "tool" messages.
    * @param {Array} messages - Messages array that may contain legacy function messages
@@ -118,7 +135,17 @@ class AzureOpenAiProvider extends Provider {
           });
         }
       } else {
-        formattedMessages.push(message);
+        // Handle attachments for regular messages
+        if (message.attachments && message.attachments.length > 0) {
+          const contentArray = Array.isArray(message.content)
+            ? message.content
+            : [{ type: "text", text: message.content }];
+          contentArray.push(...this.#formatAttachments(message.attachments));
+          const { attachments, ...messageWithoutAttachments } = message;
+          formattedMessages.push({ ...messageWithoutAttachments, content: contentArray });
+        } else {
+          formattedMessages.push(message);
+        }
       }
     }
 

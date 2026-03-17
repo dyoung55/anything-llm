@@ -50,17 +50,21 @@ class AgentHandler {
 
       const agentHistory = [];
       rawHistory.forEach((chatLog) => {
+        const parsedResponse = safeJsonParse(chatLog.response);
+        const attachments = parsedResponse?.attachments || [];
+
         agentHistory.push(
           {
             from: USER_AGENT.name,
             to: WORKSPACE_AGENT.name,
             content: chatLog.prompt,
+            attachments: attachments,
             state: "success",
           },
           {
             from: WORKSPACE_AGENT.name,
             to: USER_AGENT.name,
-            content: safeJsonParse(chatLog.response)?.text || "",
+            content: parsedResponse?.text || "",
             state: "success",
           }
         );
@@ -401,6 +405,13 @@ class AgentHandler {
     if (invocation?.closed)
       throw new Error("This agent invocation is already closed");
     this.invocation = invocation ?? null;
+    if (this.invocation) {
+      const cachedAttachments =
+        WorkspaceAgentInvocation.getAndClearAttachments(this.invocation.uuid);
+      if (cachedAttachments?.length > 0) {
+        this.invocation.attachments = cachedAttachments;
+      }
+    }
   }
 
   parseCallOptions(args, config = {}, pluginName) {
@@ -622,6 +633,7 @@ class AgentHandler {
       from: USER_AGENT.name,
       to: this.channel ?? WORKSPACE_AGENT.name,
       content: this.invocation.prompt,
+      attachments: this.invocation.attachments || [],
     });
   }
 }

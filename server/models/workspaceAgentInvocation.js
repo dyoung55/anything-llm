@@ -1,12 +1,21 @@
 const prisma = require("../utils/prisma");
 const { v4: uuidv4 } = require("uuid");
 
+// In-memory cache for attachments keyed by invocation UUID (consumed once when handler loads).
+const invocationAttachmentsCache = new Map();
+
 const WorkspaceAgentInvocation = {
   // returns array of strings with their @ handle.
   // must start with @agent for now.
   parseAgents: function (promptString) {
     if (!promptString.startsWith("@agent")) return [];
     return promptString.split(/\s+/).filter((v) => v.startsWith("@"));
+  },
+
+  getAndClearAttachments: function (uuid) {
+    const attachments = invocationAttachmentsCache.get(String(uuid)) || [];
+    invocationAttachmentsCache.delete(String(uuid));
+    return attachments;
   },
 
   close: async function (uuid) {
@@ -19,7 +28,7 @@ const WorkspaceAgentInvocation = {
     } catch {}
   },
 
-  new: async function ({ prompt, workspace, user = null, thread = null }) {
+  new: async function ({ prompt, workspace, user = null, thread = null, attachments = [] }) {
     try {
       const invocation = await prisma.workspace_agent_invocations.create({
         data: {
@@ -30,6 +39,13 @@ const WorkspaceAgentInvocation = {
           thread_id: thread?.id,
         },
       });
+
+      // Attachments are not stored in the invocation table but passed through
+      // the agent flow and stored in workspace_chats.response JSON
+      invocation.attachments = attachments;
+      if (attachments?.length > 0) {
+        invocationAttachmentsCache.set(invocation.uuid, attachments);
+      }
 
       return { invocation, message: null };
     } catch (error) {

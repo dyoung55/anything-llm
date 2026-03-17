@@ -111,6 +111,30 @@ class AnthropicProvider extends Provider {
     ];
   }
 
+  /**
+   * Format attachments for Anthropic's API
+   * @param {Array} attachments - Array of attachment objects
+   * @returns {Array} Formatted attachment content blocks
+   */
+  #formatAttachments(attachments = []) {
+    if (!attachments || !attachments.length) return [];
+    
+    return attachments.map((attachment) => {
+      const base64Data = attachment.contentString.includes("base64,")
+        ? attachment.contentString.split("base64,")[1]
+        : attachment.contentString;
+      
+      return {
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: attachment.mime || "image/jpeg",
+          data: base64Data,
+        },
+      };
+    });
+  }
+
   #prepareMessages(messages = []) {
     // Extract system prompt and filter out any system messages from the main chat.
     let systemPrompt =
@@ -159,6 +183,11 @@ class AnthropicProvider extends Provider {
             item.type !== "text" || (item.text && item.text.trim().length > 0)
         );
 
+        // Add attachments if present in the message
+        if (message.attachments && message.attachments.length > 0) {
+          content.push(...this.#formatAttachments(message.attachments));
+        }
+
         if (content.length === 0) return processedMessages;
 
         // Add a text block to assistant messages with tool use if one doesn't exist.
@@ -178,7 +207,8 @@ class AnthropicProvider extends Provider {
           // Merge consecutive messages from the same role.
           lastMessage.content.push(...content);
         } else {
-          processedMessages.push({ ...message, content });
+          const { attachments, ...messageWithoutAttachments } = message;
+          processedMessages.push({ ...messageWithoutAttachments, content });
         }
 
         return processedMessages;
