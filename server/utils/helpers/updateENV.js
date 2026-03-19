@@ -32,7 +32,7 @@ const KEY_MAPPING = {
     checks: [isNotEmpty],
   },
   AzureOpenAiModelPref: {
-    envKey: "OPEN_MODEL_PREF",
+    envKey: "AZURE_OPENAI_MODEL_PREF",
     checks: [isNotEmpty],
   },
   AzureOpenAiEmbeddingModelPref: {
@@ -562,14 +562,6 @@ const KEY_MAPPING = {
   },
 
   // Agent Integration ENVs
-  AgentGoogleSearchEngineId: {
-    envKey: "AGENT_GSE_CTX",
-    checks: [],
-  },
-  AgentGoogleSearchEngineKey: {
-    envKey: "AGENT_GSE_KEY",
-    checks: [],
-  },
   AgentSerpApiKey: {
     envKey: "AGENT_SERPAPI_API_KEY",
     checks: [],
@@ -608,6 +600,10 @@ const KEY_MAPPING = {
   },
   AgentExaApiKey: {
     envKey: "AGENT_EXA_API_KEY",
+    checks: [],
+  },
+  AgentPerplexityApiKey: {
+    envKey: "AGENT_PERPLEXITY_API_KEY",
     checks: [],
   },
 
@@ -827,6 +823,20 @@ const KEY_MAPPING = {
     envKey: "SAMBANOVA_LLM_MODEL_PREF",
     checks: [isNotEmpty],
   },
+
+  // Lemonade Options
+  LemonadeLLMBasePath: {
+    envKey: "LEMONADE_LLM_BASE_PATH",
+    checks: [isValidURL],
+  },
+  LemonadeLLMModelPref: {
+    envKey: "LEMONADE_LLM_MODEL_PREF",
+    checks: [isNotEmpty],
+  },
+  LemonadeLLMModelTokenLimit: {
+    envKey: "LEMONADE_LLM_MODEL_TOKEN_LIMIT",
+    checks: [nonZero],
+  },
 };
 
 function isNotEmpty(input = "") {
@@ -847,7 +857,7 @@ function isValidURL(input = "") {
   try {
     new URL(input);
     return null;
-  } catch (e) {
+  } catch {
     return "URL is not a valid URL.";
   }
 }
@@ -943,6 +953,7 @@ function supportedLLM(input = "") {
     "docker-model-runner",
     "privatemode",
     "sambanova",
+    "lemonade",
   ].includes(input);
   return validSelection ? null : `${input} is not a valid LLM provider.`;
 }
@@ -981,6 +992,7 @@ function supportedEmbeddingModel(input = "") {
     "generic-openai",
     "mistral",
     "openrouter",
+    "lemonade",
   ];
   return supported.includes(input)
     ? null
@@ -1303,6 +1315,9 @@ function dumpENV() {
 
     // Allow disabling of streaming for AWS Bedrock
     "AWS_BEDROCK_STREAMING_DISABLED",
+
+    // Allow native tool calling for specific providers.
+    "PROVIDER_SUPPORTS_NATIVE_TOOL_CALLING",
   ];
 
   // Simple sanitization of each value to prevent ENV injection via newline or quote escaping.

@@ -3,7 +3,6 @@ import { isMobile } from "react-device-detect";
 import { useTranslation } from "react-i18next";
 import LanguagePreference from "../components/LanguagePreference";
 import ThemePreference from "../components/ThemePreference";
-import { MessageDirection } from "../components/MessageDirection";
 import CustomBannerSettings from "../components/CustomBannerSettings";
 import ThemeColorCustomization from "../components/ThemeColorCustomization";
 
@@ -32,7 +31,6 @@ export default function InterfaceSettings() {
           <ThemePreference />
           <ThemeColorCustomization />
           <LanguagePreference />
-          <MessageDirection />
         </div>
       </div>
     </div>

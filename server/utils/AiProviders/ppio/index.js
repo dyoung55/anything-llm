@@ -113,6 +113,7 @@ class PPIOLLM {
    * @param {{userPrompt:string, attachments: import("../../helpers").Attachment[]}}
    * @returns {string|object[]}
    */
+  //eslint-disable-next-line
   #generateContent({ userPrompt, attachments = [] }) {
     if (!attachments.length) {
       return userPrompt;

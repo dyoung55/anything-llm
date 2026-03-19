@@ -32,7 +32,6 @@ const {
   isDefaultFilename,
 } = require("../utils/files/logo");
 const { Telemetry } = require("../models/telemetry");
-const { WelcomeMessages } = require("../models/welcomeMessages");
 const { ApiKey } = require("../models/apiKeys");
 const { getCustomModels } = require("../utils/helpers/customModels");
 const { WorkspaceChats } = require("../models/workspaceChats");
@@ -1635,8 +1634,8 @@ function systemEndpoints(app) {
     "/system/validate-sql-connection",
     [validatedRequest, flexUserRoleValid([ROLES.admin])],
     async (request, response) => {
+      const { engine, connectionString } = reqBody(request);
       try {
-        const { engine, connectionString } = reqBody(request);
         if (!engine || !connectionString) {
           return response.status(400).json({
             success: false,

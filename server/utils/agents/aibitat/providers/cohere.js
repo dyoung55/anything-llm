@@ -28,6 +28,15 @@ class CohereProvider extends InheritMultiple([Provider, UnTooled]) {
     return true;
   }
 
+  /**
+   * Whether this provider supports native OpenAI-compatible tool calling.
+   * Override in subclass and return true to use native tool calling instead of UnTooled.
+   * @returns {boolean|Promise<boolean>}
+   */
+  supportsNativeToolCalling() {
+    return false;
+  }
+
   #convertChatHistoryCohere(chatHistory = []) {
     let cohereHistory = [];
     chatHistory.forEach((message) => {
@@ -144,6 +153,7 @@ class CohereProvider extends InheritMultiple([Provider, UnTooled]) {
     this.providerLog(
       "CohereProvider.stream - will process this chat completion."
     );
+    // eslint-disable-next-line
     try {
       let completion = { content: "" };
       if (functions.length > 0) {

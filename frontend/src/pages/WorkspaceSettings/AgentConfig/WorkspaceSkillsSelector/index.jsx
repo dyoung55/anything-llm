@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import WorkspaceAgentConfig from "@/models/workspaceAgentConfig";
 import showToast from "@/utils/toast";
 import { Robot } from "@phosphor-icons/react";
-import { defaultSkills, configurableSkills } from "@/pages/Admin/Agents/skills";
+import { getDefaultSkills, getConfigurableSkills } from "@/pages/Admin/Agents/skills";
 import { titleCase } from "text-case";
 
 export default function WorkspaceSkillsSelector({ workspace }) {
+  const { t } = useTranslation();
+  const defaultSkills = useMemo(() => getDefaultSkills(t), [t]);
+  const configurableSkills = useMemo(() => getConfigurableSkills(t), [t]);
   const [loading, setLoading] = useState(true);
   const [defaultSkillsList, setDefaultSkillsList] = useState([]);
   const [configurableSkillsList, setConfigurableSkillsList] = useState([]);

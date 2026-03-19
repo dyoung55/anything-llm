@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import SlashCommandIcon from "./icons/SlashCommandIcon";
+import { Slash } from "@phosphor-icons/react";
 import { Tooltip } from "react-tooltip";
 import ResetCommand from "./reset";
 import EndAgentSession from "./endAgentSession";
@@ -19,9 +19,10 @@ export default function SlashCommandsButton({ showing, setShowSlashCommand }) {
         showing ? "!opacity-100" : ""
       }`}
     >
-      <SlashCommandIcon
-        color="var(--theme-sidebar-footer-icon-fill)"
-        className="w-[18px] h-[18px] pointer-events-none"
+      <Slash
+        size={18}
+        className="pointer-events-none shrink-0"
+        style={{ color: "var(--theme-sidebar-footer-icon-fill)" }}
       />
       <Tooltip
         id="tooltip-slash-cmd-btn"

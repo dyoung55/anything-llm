@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useIsAgentSessionActive } from "@/utils/chat/agent";
-import AddPresetModal from "./AddPresetModal";
-import EditPresetModal from "./EditPresetModal";
+import AddPresetModal from "@/components/WorkspaceChat/ChatContainer/PromptInput/ToolsMenu/Tabs/SlashCommands/SlashPresets/AddPresetModal";
+import EditPresetModal from "@/components/WorkspaceChat/ChatContainer/PromptInput/ToolsMenu/Tabs/SlashCommands/SlashPresets/EditPresetModal";
 import { useModal } from "@/hooks/useModal";
 import System from "@/models/system";
 import { DotsThree, Plus } from "@phosphor-icons/react";
