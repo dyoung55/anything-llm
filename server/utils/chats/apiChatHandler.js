@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { DocumentManager } = require("../DocumentManager");
 const { WorkspaceChats } = require("../../models/workspaceChats");
+const { WorkspaceParsedFiles } = require("../../models/workspaceParsedFiles");
 const { getVectorDbClass, getLLMProvider } = require("../helpers");
 const { writeResponseChunk } = require("../helpers/chat/responses");
 const {
@@ -96,6 +97,17 @@ async function processDocumentAttachments(attachments = []) {
 }
 
 /**
+ * Resolve chat mode for developer API: explicit body `mode` wins; otherwise use the workspace default, then "query".
+ * @param {string|undefined|null} mode
+ * @param {import("@prisma/client").workspaces} workspace
+ * @returns {string}
+ */
+function resolveApiChatMode(mode, workspace) {
+  if (mode !== undefined && mode !== null) return mode;
+  return workspace?.chatMode ?? "query";
+}
+
+/**
  * Handle synchronous chats with your workspace via the developer API endpoint
  * @param {{
  *  workspace: import("@prisma/client").workspaces,
@@ -112,7 +124,7 @@ async function processDocumentAttachments(attachments = []) {
 async function chatSync({
   workspace,
   message = null,
-  mode = "chat",
+  mode,
   user = null,
   thread = null,
   sessionId = null,
@@ -120,7 +132,7 @@ async function chatSync({
   reset = false,
 }) {
   const uuid = uuidv4();
-  const chatMode = mode ?? "chat";
+  const chatMode = resolveApiChatMode(mode, workspace);
 
   // If the user wants to reset the chat history we do so pre-flight
   // and continue execution. If no message is provided then the user intended
@@ -150,7 +162,13 @@ async function chatSync({
   const processedMessage = await grepAllSlashCommands(message);
   message = processedMessage;
 
-  if (EphemeralAgentHandler.isAgentInvocation({ message })) {
+  if (
+    EphemeralAgentHandler.isAgentInvocation({
+      message,
+      workspace,
+      mode: chatMode,
+    })
+  ) {
     await Telemetry.sendTelemetry("agent_chat_started");
 
     // Initialize the EphemeralAgentHandler to handle non-continuous
@@ -178,7 +196,7 @@ async function chatSync({
     // After this, we conclude the call as we normally do.
     return await eventListener
       .waitForClose()
-      .then(async ({ thoughts, textResponse }) => {
+      .then(async ({ thoughts, textResponse, contentSegments }) => {
         await WorkspaceChats.new({
           workspaceId: workspace.id,
           prompt: String(message),
@@ -188,6 +206,7 @@ async function chatSync({
             attachments,
             type: chatMode,
             thoughts,
+            contentSegments,
           },
           include: false,
           apiSessionId: sessionId,
@@ -200,6 +219,7 @@ async function chatSync({
           error: null,
           textResponse,
           thoughts,
+          contentSegments,
         };
       });
   }
@@ -278,6 +298,21 @@ async function chatSync({
         });
       });
     });
+
+  const parsedFiles = await WorkspaceParsedFiles.getContextFiles(
+    workspace,
+    thread || null,
+    user || null
+  );
+  parsedFiles.forEach((doc) => {
+    const { pageContent, ...metadata } = doc;
+    contextTexts.push(doc.pageContent);
+    sources.push({
+      text:
+        pageContent.slice(0, 1_000) + "...continued on in source document...",
+      ...metadata,
+    });
+  });
 
   const processedAttachments = await processDocumentAttachments(attachments);
   const parsedAttachments = processedAttachments.parsedDocuments;
@@ -454,7 +489,7 @@ async function streamChat({
   response,
   workspace,
   message = null,
-  mode = "chat",
+  mode,
   user = null,
   thread = null,
   sessionId = null,
@@ -462,7 +497,7 @@ async function streamChat({
   reset = false,
 }) {
   const uuid = uuidv4();
-  const chatMode = mode ?? "chat";
+  const chatMode = resolveApiChatMode(mode, workspace);
 
   // If the user wants to reset the chat history we do so pre-flight
   // and continue execution. If no message is provided then the user intended
@@ -494,7 +529,13 @@ async function streamChat({
   const processedMessage = await grepAllSlashCommands(message);
   message = processedMessage;
 
-  if (EphemeralAgentHandler.isAgentInvocation({ message })) {
+  if (
+    EphemeralAgentHandler.isAgentInvocation({
+      message,
+      workspace,
+      mode: chatMode,
+    })
+  ) {
     await Telemetry.sendTelemetry("agent_chat_started");
 
     // Initialize the EphemeralAgentHandler to handle non-continuous
@@ -521,7 +562,7 @@ async function streamChat({
     // and stream back any results we get from agents as they come in.
     return eventListener
       .streamAgentEvents(response, uuid)
-      .then(async ({ thoughts, textResponse }) => {
+      .then(async ({ thoughts, textResponse, contentSegments }) => {
         await WorkspaceChats.new({
           workspaceId: workspace.id,
           prompt: String(message),
@@ -531,6 +572,7 @@ async function streamChat({
             attachments: attachments,
             type: chatMode,
             thoughts,
+            contentSegments,
           },
           include: true,
           threadId: thread?.id || null,
@@ -541,6 +583,7 @@ async function streamChat({
           type: "finalizeResponseStream",
           textResponse,
           thoughts,
+          contentSegments,
           close: true,
           error: false,
         });
@@ -632,6 +675,21 @@ async function streamChat({
         });
       });
     });
+
+  const parsedFilesStream = await WorkspaceParsedFiles.getContextFiles(
+    workspace,
+    thread || null,
+    user || null
+  );
+  parsedFilesStream.forEach((doc) => {
+    const { pageContent, ...metadata } = doc;
+    contextTexts.push(doc.pageContent);
+    sources.push({
+      text:
+        pageContent.slice(0, 1_000) + "...continued on in source document...",
+      ...metadata,
+    });
+  });
 
   const processedAttachments = await processDocumentAttachments(attachments);
   const parsedAttachments = processedAttachments.parsedDocuments;
@@ -815,4 +873,5 @@ async function streamChat({
 module.exports.ApiChatHandler = {
   chatSync,
   streamChat,
+  resolveApiChatMode,
 };

@@ -1,4 +1,7 @@
 const { WorkspaceChats } = require("../../../../models/workspaceChats");
+const {
+  packAgentContentToPlainText,
+} = require("../../agentMessageContent");
 
 /**
  * Plugin to save chat history to AnythingLLM DB.
@@ -48,9 +51,9 @@ const chatHistory = {
 
         await WorkspaceChats.new({
           workspaceId: Number(invocation.workspace_id),
-          prompt: prompt,
+          prompt: packAgentContentToPlainText(prompt),
           response: {
-            text: response,
+            text: packAgentContentToPlainText(response),
             sources: [],
             attachments: attachments,
             type: "chat",
@@ -67,12 +70,12 @@ const chatHistory = {
 
         await WorkspaceChats.new({
           workspaceId: Number(invocation.workspace_id),
-          prompt: prompt,
+          prompt: packAgentContentToPlainText(prompt),
           response: {
             sources: options?.sources ?? [],
             text: options.hasOwnProperty("storedResponse")
               ? options.storedResponse(response)
-              : response,
+              : packAgentContentToPlainText(response),
             attachments: attachments,
             type: options?.saveAsType ?? "chat",
           },
