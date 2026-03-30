@@ -57,6 +57,12 @@ const {
   chatHistoryViewable,
 } = require("../utils/middleware/chatHistoryViewable");
 const {
+  buildUsageWhere,
+  aggregateUsageSeries,
+  fetchUsageRows,
+  buildUsageExportCsv,
+} = require("../utils/workspaceUsageAnalytics");
+const {
   simpleSSOEnabled,
   simpleSSOLoginDisabled,
 } = require("../utils/middleware/simpleSSOEnabled");
@@ -1336,6 +1342,94 @@ function systemEndpoints(app) {
         );
         response.setHeader("Content-Type", contentType);
         response.status(200).send(data);
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  const usageAnalyticsMiddleware = [
+    chatHistoryViewable,
+    validatedRequest,
+    flexUserRoleValid([ROLES.admin, ROLES.manager]),
+  ];
+
+  app.post(
+    "/system/usage-analytics",
+    usageAnalyticsMiddleware,
+    async (request, response) => {
+      try {
+        const body = reqBody(request);
+        const where = buildUsageWhere(body);
+        const result = await aggregateUsageSeries(where);
+        if (result.error === "too_many_rows") {
+          response.status(422).json({
+            error:
+              "Too many matching chats for this range. Narrow the date range or filters.",
+            code: result.error,
+            totalCount: result.totalCount,
+            max: result.max,
+          });
+          return;
+        }
+        response.status(200).json({
+          series: result.series,
+          totals: result.totals,
+        });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/system/usage-analytics/rows",
+    usageAnalyticsMiddleware,
+    async (request, response) => {
+      try {
+        const body = reqBody(request);
+        const { limit = 20, offset = 0, ...filterBody } = body;
+        const where = buildUsageWhere(filterBody);
+        const { rows, totalCount } = await fetchUsageRows(
+          where,
+          Number(limit) || 20,
+          Number(offset) || 0
+        );
+        response.status(200).json({ rows, totalCount });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/system/usage-analytics/export",
+    usageAnalyticsMiddleware,
+    async (request, response) => {
+      try {
+        const body = reqBody(request);
+        const where = buildUsageWhere(body);
+        const result = await buildUsageExportCsv(where);
+        if (result.error === "too_many_rows") {
+          response.status(422).json({
+            error:
+              "Too many matching chats to export. Narrow the date range or filters.",
+            code: result.error,
+            totalCount: result.totalCount,
+            max: result.max,
+          });
+          return;
+        }
+        await EventLogs.logEvent(
+          "exported_usage_analytics",
+          {},
+          response.locals.user?.id
+        );
+        response.setHeader("Content-Type", "text/csv; charset=utf-8");
+        response.status(200).send(result.csv);
       } catch (e) {
         console.error(e);
         response.sendStatus(500).end();

@@ -287,6 +287,15 @@ const router = createBrowserRouter([
         },
       },
       {
+        path: "/settings/usage",
+        lazy: async () => {
+          const { default: UsageDashboard } = await import(
+            "@/pages/GeneralSettings/Usage"
+          );
+          return { element: <ManagerRoute Component={UsageDashboard} /> };
+        },
+      },
+      {
         path: "/settings/invites",
         lazy: async () => {
           const { default: AdminInvites } = await import(

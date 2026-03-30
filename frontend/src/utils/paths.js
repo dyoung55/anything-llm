@@ -108,6 +108,9 @@ export default {
     chats: () => {
       return "/settings/workspace-chats";
     },
+    usage: () => {
+      return "/settings/usage";
+    },
     llmPreference: () => {
       return "/settings/llm-preference";
     },
