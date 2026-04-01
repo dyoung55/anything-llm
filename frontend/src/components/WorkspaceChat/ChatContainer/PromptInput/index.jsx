@@ -25,6 +25,9 @@ import useTextSize from "@/hooks/useTextSize";
 import { useTranslation } from "react-i18next";
 import Appearance from "@/models/appearance";
 import usePromptInputStorage from "@/hooks/usePromptInputStorage";
+import SavedPromptsPanel, {
+  SavedPromptsButton,
+} from "./SavedPromptsPanel";
 
 export const PROMPT_INPUT_ID = "primary-prompt-input";
 export const PROMPT_INPUT_EVENT = "set_prompt_input";
@@ -54,6 +57,7 @@ export default function PromptInput({
   const [promptInput, setPromptInput] = useState("");
   const { showAgents, setShowAgents } = useAvailableAgents();
   const { showSlashCommand, setShowSlashCommand } = useSlashCommands();
+  const [showSavedPrompts, setShowSavedPrompts] = useState(false);
   const formRef = useRef(null);
   const textareaRef = useRef(null);
   const [_, setFocused] = useState(false);
@@ -110,6 +114,12 @@ export default function PromptInput({
     setFocused(false);
     submit(e);
   }
+
+  useEffect(() => {
+    if (!textareaRef.current) return;
+    textareaRef.current.style.height = "auto";
+    textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+  }, [promptInput]);
 
   function resetTextAreaHeight() {
     if (!textareaRef.current) return;
@@ -282,6 +292,10 @@ export default function PromptInput({
         promptRef={textareaRef}
         centered={centered}
       />
+      <SavedPromptsPanel
+        showing={showSavedPrompts}
+        setShowing={setShowSavedPrompts}
+      />
       <form
         onSubmit={handleSubmit}
         className={
@@ -333,6 +347,10 @@ export default function PromptInput({
                 />
                 <TextSizeButton />
                 <LLMSelectorAction workspaceSlug={workspaceSlug} />
+                <SavedPromptsButton
+                  showing={showSavedPrompts}
+                  setShowSavedPrompts={setShowSavedPrompts}
+                />
               </div>
               <div className="flex gap-x-2 items-center h-5">
                 <SpeechToText sendCommand={sendCommand} />

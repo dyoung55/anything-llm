@@ -37,6 +37,7 @@ const HistoricalMessage = ({
   forkThread,
   metrics = {},
   alignmentCls = "",
+  userPrompt = "",
 }) => {
   const { t } = useTranslation();
   const { isEditing } = useEditMessage({ chatId, role });
@@ -150,6 +151,7 @@ const HistoricalMessage = ({
             forkThread={forkThread}
             metrics={metrics}
             alignmentCls={alignmentCls}
+            userPrompt={userPrompt}
           />
         </div>
         {role === "assistant" && <Citations sources={sources} />}

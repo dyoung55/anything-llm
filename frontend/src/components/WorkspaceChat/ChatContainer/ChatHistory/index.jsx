@@ -287,6 +287,12 @@ function buildMessages({
         />
       );
     } else {
+      const userPrompt =
+        props.role === "assistant" &&
+        index > 0 &&
+        history[index - 1]?.role === "user"
+          ? history[index - 1].content
+          : "";
       acc.push(
         <HistoricalMessage
           key={index}
@@ -305,6 +311,7 @@ function buildMessages({
           forkThread={forkThread}
           metrics={props.metrics}
           alignmentCls={getMessageAlignment?.(props.role)}
+          userPrompt={userPrompt}
         />
       );
     }

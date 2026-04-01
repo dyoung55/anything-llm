@@ -51,6 +51,7 @@ const {
   generateRecoveryCodes,
 } = require("../utils/PasswordRecovery");
 const { SlashCommandPresets } = require("../models/slashCommandsPresets");
+const { SavedPrompts } = require("../models/savedPrompts");
 const { EncryptionManager } = require("../utils/EncryptionManager");
 const { BrowserExtensionApiKey } = require("../models/browserExtensionApiKey");
 const {
@@ -1596,6 +1597,120 @@ function systemEndpoints(app) {
         response.sendStatus(204);
       } catch (error) {
         console.error("Error deleting slash command preset:", error);
+        response.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.get(
+    "/system/saved-prompts",
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    async (request, response) => {
+      try {
+        const user = await userFromSession(request, response);
+        const prompts = await SavedPrompts.getUserPrompts(user?.id);
+        response.status(200).json({ prompts });
+      } catch (error) {
+        console.error("Error fetching saved prompts:", error);
+        response.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.post(
+    "/system/saved-prompts",
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    async (request, response) => {
+      try {
+        const { name, prompt, exampleResponse } = reqBody(request);
+        if (!name || !prompt || !exampleResponse) {
+          return response
+            .status(400)
+            .json({ message: "Name, Prompt, and Example Response are required" });
+        }
+
+        const user = await userFromSession(request, response);
+        const savedPrompt = await SavedPrompts.create(user?.id, {
+          name,
+          prompt,
+          exampleResponse,
+        });
+
+        if (!savedPrompt)
+          return response
+            .status(500)
+            .json({ message: "Failed to create saved prompt" });
+
+        response.status(201).json({ prompt: savedPrompt });
+      } catch (error) {
+        console.error("Error creating saved prompt:", error);
+        response.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.post(
+    "/system/saved-prompts/:savedPromptId",
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    async (request, response) => {
+      try {
+        const { savedPromptId } = request.params;
+        const user = await userFromSession(request, response);
+
+        const ownsPrompt = await SavedPrompts.get({
+          id: Number(savedPromptId),
+          uid: user?.id ?? 0,
+        });
+        if (!ownsPrompt)
+          return response
+            .status(403)
+            .json({ message: "Failed to update saved prompt" });
+
+        const { name, prompt, exampleResponse } = reqBody(request);
+        const updates = {};
+        if (name !== undefined) updates.name = String(name);
+        if (prompt !== undefined) updates.prompt = String(prompt);
+        if (exampleResponse !== undefined)
+          updates.exampleResponse = String(exampleResponse);
+
+        const updated = await SavedPrompts.update(
+          Number(savedPromptId),
+          updates
+        );
+        if (!updated)
+          return response
+            .status(500)
+            .json({ message: "Failed to update saved prompt" });
+
+        response.status(200).json({ prompt: updated });
+      } catch (error) {
+        console.error("Error updating saved prompt:", error);
+        response.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.delete(
+    "/system/saved-prompts/:savedPromptId",
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    async (request, response) => {
+      try {
+        const { savedPromptId } = request.params;
+        const user = await userFromSession(request, response);
+
+        const ownsPrompt = await SavedPrompts.get({
+          id: Number(savedPromptId),
+          uid: user?.id ?? 0,
+        });
+        if (!ownsPrompt)
+          return response
+            .status(403)
+            .json({ message: "Failed to delete saved prompt" });
+
+        await SavedPrompts.delete(Number(savedPromptId));
+        response.sendStatus(204);
+      } catch (error) {
+        console.error("Error deleting saved prompt:", error);
         response.status(500).json({ message: "Internal server error" });
       }
     }

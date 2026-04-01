@@ -79,6 +79,7 @@ model users {
   password_reset_tokens        password_reset_tokens[]
   workspace_agent_invocations  workspace_agent_invocations[]
   slash_command_presets        slash_command_presets[]
+  saved_prompts                saved_prompts[]
   browser_extension_api_keys   browser_extension_api_keys[]
   temporary_auth_tokens        temporary_auth_tokens[]
   system_prompt_variables      system_prompt_variables[]
@@ -296,6 +297,20 @@ model slash_command_presets {
   user          users?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([uid, command])
+}
+
+model saved_prompts {
+  id              Int      @id @default(autoincrement())
+  name            String
+  prompt          String
+  exampleResponse String
+  uid             Int      @default(0) // 0 is null user
+  userId          Int?
+  createdAt       DateTime @default(now())
+  lastEditedAt    DateTime @default(now())
+  user            users?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([uid])
 }
 
 model document_sync_queues {

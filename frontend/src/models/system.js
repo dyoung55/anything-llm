@@ -845,6 +845,62 @@ const System = {
       });
   },
 
+  getSavedPrompts: async function () {
+    return await fetch(`${API_BASE}/system/saved-prompts`, {
+      method: "GET",
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .then((res) => res?.prompts || [])
+      .catch((e) => {
+        console.error(e);
+        return [];
+      });
+  },
+
+  createSavedPrompt: async function (promptData = {}) {
+    return await fetch(`${API_BASE}/system/saved-prompts`, {
+      method: "POST",
+      body: JSON.stringify(promptData),
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .then((res) => ({ prompt: res?.prompt || null, error: res?.message }))
+      .catch((e) => {
+        console.error(e);
+        return { prompt: null, error: e.message };
+      });
+  },
+
+  updateSavedPrompt: async function (promptId, promptData = {}) {
+    return await fetch(`${API_BASE}/system/saved-prompts/${promptId}`, {
+      method: "POST",
+      body: JSON.stringify(promptData),
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .then((res) => ({ prompt: res?.prompt || null, error: res?.message }))
+      .catch((e) => {
+        console.error(e);
+        return { prompt: null, error: e.message };
+      });
+  },
+
+  deleteSavedPrompt: async function (promptId) {
+    return await fetch(`${API_BASE}/system/saved-prompts/${promptId}`, {
+      method: "DELETE",
+      headers: baseHeaders(),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Could not delete saved prompt.");
+        return true;
+      })
+      .catch((e) => {
+        console.error(e);
+        return false;
+      });
+  },
+
   /**
    * Fetches the can view chat history state from local storage or the system settings.
    * Notice: This is an instance setting that cannot be changed via the UI and it is cached
