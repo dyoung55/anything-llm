@@ -491,13 +491,8 @@ function AppVersion() {
   const { version, isLoading } = useAppVersion();
   if (isLoading) return null;
   return (
-    <Link
-      to={`https://github.com/Mintplex-Labs/anything-llm/releases/tag/v${version}`}
-      target="_blank"
-      rel="noreferrer"
-      className="text-theme-text-secondary light:opacity-80 opacity-50 text-xs mx-3"
-    >
+    <p className="text-theme-text-secondary light:opacity-80 opacity-50 text-xs mx-3">
       v{version}
-    </Link>
+    </p>
   );
 }
