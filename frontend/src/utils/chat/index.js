@@ -11,8 +11,8 @@ export default function handleChat(
   _chatHistory,
   setWebsocket
 ) {
+  const streamUuid = chatResult.uuid ?? chatResult.id;
   const {
-    uuid,
     textResponse,
     type,
     sources = [],
@@ -30,7 +30,7 @@ export default function handleChat(
       ...remHistory,
       {
         type,
-        uuid,
+        uuid: streamUuid,
         content: textResponse,
         role: "assistant",
         sources,
@@ -43,7 +43,7 @@ export default function handleChat(
     ]);
     _chatHistory.push({
       type,
-      uuid,
+      uuid: streamUuid,
       content: textResponse,
       role: "assistant",
       sources,
@@ -58,7 +58,7 @@ export default function handleChat(
     setChatHistory([
       ...remHistory,
       {
-        uuid,
+        uuid: streamUuid,
         content: textResponse,
         role: "assistant",
         sources,
@@ -71,7 +71,7 @@ export default function handleChat(
       },
     ]);
     _chatHistory.push({
-      uuid,
+      uuid: streamUuid,
       content: textResponse,
       role: "assistant",
       sources,
@@ -87,7 +87,7 @@ export default function handleChat(
     type === "textResponseChunk" ||
     type === "finalizeResponseStream"
   ) {
-    const chatIdx = _chatHistory.findIndex((chat) => chat.uuid === uuid);
+    const chatIdx = _chatHistory.findIndex((chat) => chat.uuid === streamUuid);
     if (chatIdx !== -1) {
       const existingHistory = { ..._chatHistory[chatIdx] };
       let updatedHistory;
@@ -124,7 +124,7 @@ export default function handleChat(
       _chatHistory[chatIdx] = updatedHistory;
     } else {
       _chatHistory.push({
-        uuid,
+        uuid: streamUuid,
         sources,
         error,
         content: textResponse,

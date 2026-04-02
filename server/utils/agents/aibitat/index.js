@@ -724,6 +724,7 @@ ${this.getHistory({ to: route.to })
         const finalResponse =
           finalStream?.textResponse ||
           "I reached the maximum number of tool calls allowed for a single response. Here is what I have so far based on the tools I was able to run.";
+        this._lastAssistantStreamUuid = finalUuid;
         return finalResponse;
       }
 
@@ -790,6 +791,7 @@ ${this.getHistory({ to: route.to })
           metrics: provider.getUsage(),
         });
         this?.flushCitations?.(directOutputUUID);
+        this._lastAssistantStreamUuid = directOutputUUID;
         return result;
       }
 
@@ -817,6 +819,7 @@ ${this.getHistory({ to: route.to })
       metrics: provider.getUsage(),
     });
     this?.flushCitations?.(responseUuid);
+    this._lastAssistantStreamUuid = responseUuid;
     return completionStream?.textResponse;
   }
 
@@ -866,6 +869,7 @@ ${this.getHistory({ to: route.to })
           metrics: provider.getUsage(),
         });
         this?.flushCitations?.(msgUUID);
+        this._lastAssistantStreamUuid = msgUUID;
         return (
           finalCompletion?.textResponse ||
           "I reached the maximum number of tool calls allowed for a single response. Here is what I have so far based on the tools I was able to run."
@@ -924,6 +928,7 @@ ${this.getHistory({ to: route.to })
           metrics: provider.getUsage(),
         });
         this?.flushCitations?.(msgUUID);
+        this._lastAssistantStreamUuid = msgUUID;
         return result;
       }
 
@@ -951,6 +956,7 @@ ${this.getHistory({ to: route.to })
       metrics: provider.getUsage(),
     });
     this?.flushCitations?.(msgUUID);
+    this._lastAssistantStreamUuid = msgUUID;
     return completion?.textResponse;
   }
 

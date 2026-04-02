@@ -50,7 +50,7 @@ const chatHistory = {
         const invocation = aibitat.handlerProps.invocation;
         const metrics = aibitat.provider?.getUsage?.() ?? {};
         const citations = aibitat._pendingCitations ?? [];
-        await WorkspaceChats.new({
+        const { chat } = await WorkspaceChats.new({
           workspaceId: Number(invocation.workspace_id),
           prompt: packAgentContentToPlainText(prompt),
           response: {
@@ -63,6 +63,13 @@ const chatHistory = {
           user: { id: invocation?.user_id || null },
           threadId: invocation?.thread_id || null,
         });
+        if (chat?.id && aibitat._lastAssistantStreamUuid) {
+          aibitat.socket?.send?.("reportStreamEvent", {
+            type: "chatPersisted",
+            uuid: aibitat._lastAssistantStreamUuid,
+            chatId: chat.id,
+          });
+        }
         aibitat.clearCitations?.();
       },
       _storeSpecial: async function (
@@ -73,7 +80,7 @@ const chatHistory = {
         const metrics = aibitat.provider?.getUsage?.() ?? {};
         const citations = aibitat._pendingCitations ?? [];
         const existingSources = options?.sources ?? [];
-        await WorkspaceChats.new({
+        const { chat } = await WorkspaceChats.new({
           workspaceId: Number(invocation.workspace_id),
           prompt: packAgentContentToPlainText(prompt),
           response: {
@@ -90,6 +97,13 @@ const chatHistory = {
           user: { id: invocation?.user_id || null },
           threadId: invocation?.thread_id || null,
         });
+        if (chat?.id && aibitat._lastAssistantStreamUuid) {
+          aibitat.socket?.send?.("reportStreamEvent", {
+            type: "chatPersisted",
+            uuid: aibitat._lastAssistantStreamUuid,
+            chatId: chat.id,
+          });
+        }
         aibitat.clearCitations?.();
         options?.postSave();
       },

@@ -105,18 +105,20 @@ const HistoricalMessage = ({
               <ChatAttachments attachments={attachments} />
             </TruncatableContent>
           </div>
-          <Actions
-            message={message}
-            feedbackScore={feedbackScore}
-            chatId={chatId}
-            slug={workspace?.slug}
-            isLastMessage={isLastMessage}
-            regenerateMessage={regenerateMessage}
-            isEditing={isEditing}
-            role={role}
-            forkThread={forkThread}
-            metrics={metrics}
-          />
+          {!!chatId && (
+            <Actions
+              message={message}
+              feedbackScore={feedbackScore}
+              chatId={chatId}
+              slug={workspace?.slug}
+              isLastMessage={isLastMessage}
+              regenerateMessage={regenerateMessage}
+              isEditing={isEditing}
+              role={role}
+              forkThread={forkThread}
+              metrics={metrics}
+            />
+          )}
         </div>
       </div>
     );
@@ -160,27 +162,29 @@ const HistoricalMessage = ({
             <ChatAttachments attachments={attachments} />
           </div>
         )}
-        <div className="flex items-start md:items-center gap-x-1">
-          <TTSMessage
-            slug={workspace?.slug}
-            chatId={chatId}
-            message={message}
-          />
-          <Actions
-            message={message}
-            feedbackScore={feedbackScore}
-            chatId={chatId}
-            slug={workspace?.slug}
-            isLastMessage={isLastMessage}
-            regenerateMessage={regenerateMessage}
-            isEditing={isEditing}
-            role={role}
-            forkThread={forkThread}
-            metrics={metrics}
-            alignmentCls={alignmentCls}
-            userPrompt={userPrompt}
-          />
-        </div>
+        {!!chatId && (
+          <div className="flex items-start md:items-center gap-x-1">
+            <TTSMessage
+              slug={workspace?.slug}
+              chatId={chatId}
+              message={message}
+            />
+            <Actions
+              message={message}
+              feedbackScore={feedbackScore}
+              chatId={chatId}
+              slug={workspace?.slug}
+              isLastMessage={isLastMessage}
+              regenerateMessage={regenerateMessage}
+              isEditing={isEditing}
+              role={role}
+              forkThread={forkThread}
+              metrics={metrics}
+              alignmentCls={alignmentCls}
+              userPrompt={userPrompt}
+            />
+          </div>
+        )}
         {role === "assistant" && <Citations sources={sources} />}
       </div>
     </div>

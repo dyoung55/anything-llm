@@ -3,6 +3,7 @@ import { safeJsonParse } from "../request";
 import { saveAs } from "file-saver";
 import { API_BASE } from "../constants";
 import { useEffect, useState } from "react";
+import { emitAssistantMessageCompleteEvent } from "@/components/contexts/TTSProvider";
 
 export const AGENT_SESSION_START = "agentSessionStart";
 export const AGENT_SESSION_END = "agentSessionEnd";
@@ -57,6 +58,20 @@ export default function handleSocketResponse(socket, event, setChatHistory) {
     return setChatHistory((prev) => {
       if (data.content.type === "removeStatusResponse")
         return [...prev.filter((msg) => msg.uuid !== data.content.uuid)];
+
+      if (data.content.type === "chatPersisted") {
+        const { uuid: persistUuid, chatId } = data.content;
+        if (!persistUuid || chatId == null) return prev;
+        const idx = prev.findIndex((m) => m.uuid === persistUuid);
+        if (idx === -1) return prev;
+        const next = [...prev];
+        next[idx] = { ...next[idx], chatId };
+        if (idx > 0 && next[idx - 1]?.role === "user") {
+          next[idx - 1] = { ...next[idx - 1], chatId };
+        }
+        emitAssistantMessageCompleteEvent(chatId);
+        return next;
+      }
 
       const knownMessage = data.content.uuid
         ? prev.find((msg) => msg.uuid === data.content.uuid)

@@ -563,7 +563,7 @@ async function streamChat({
     return eventListener
       .streamAgentEvents(response, uuid)
       .then(async ({ thoughts, textResponse, contentSegments }) => {
-        await WorkspaceChats.new({
+        const { chat } = await WorkspaceChats.new({
           workspaceId: workspace.id,
           prompt: String(message),
           response: {
@@ -586,6 +586,7 @@ async function streamChat({
           contentSegments,
           close: true,
           error: false,
+          chatId: chat?.id,
         });
       });
   }
@@ -607,17 +608,7 @@ async function streamChat({
     const textResponse =
       workspace?.queryRefusalResponse ??
       "There is no relevant information in this workspace to answer your query.";
-    writeResponseChunk(response, {
-      id: uuid,
-      type: "textResponse",
-      textResponse,
-      sources: [],
-      attachments: [],
-      close: true,
-      error: null,
-      metrics: {},
-    });
-    await WorkspaceChats.new({
+    const { chat } = await WorkspaceChats.new({
       workspaceId: workspace.id,
       prompt: message,
       response: {
@@ -631,6 +622,17 @@ async function streamChat({
       apiSessionId: sessionId,
       include: false,
       user,
+    });
+    writeResponseChunk(response, {
+      uuid,
+      type: "textResponse",
+      textResponse,
+      sources: [],
+      attachments: [],
+      close: true,
+      error: null,
+      metrics: {},
+      chatId: chat?.id,
     });
     return;
   }
@@ -761,17 +763,7 @@ async function streamChat({
     const textResponse =
       workspace?.queryRefusalResponse ??
       "There is no relevant information in this workspace to answer your query.";
-    writeResponseChunk(response, {
-      id: uuid,
-      type: "textResponse",
-      textResponse,
-      sources: [],
-      close: true,
-      error: null,
-      metrics: {},
-    });
-
-    await WorkspaceChats.new({
+    const { chat } = await WorkspaceChats.new({
       workspaceId: workspace.id,
       prompt: message,
       response: {
@@ -785,6 +777,16 @@ async function streamChat({
       apiSessionId: sessionId,
       include: false,
       user,
+    });
+    writeResponseChunk(response, {
+      uuid,
+      type: "textResponse",
+      textResponse,
+      sources: [],
+      close: true,
+      error: null,
+      metrics: {},
+      chatId: chat?.id,
     });
     return;
   }
@@ -854,7 +856,7 @@ async function streamChat({
       type: "finalizeResponseStream",
       close: true,
       error: false,
-      chatId: chat.id,
+      chatId: chat?.id,
       metrics,
       sources,
     });
