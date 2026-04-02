@@ -41,6 +41,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
   const { threadSlug = null } = useParams();
   const [loadingResponse, setLoadingResponse] = useState(false);
   const [chatHistory, setChatHistory] = useState(knownHistory);
+  const [inputHeight, setInputHeight] = useState(0);
   const [socketId, setSocketId] = useState(null);
   const [websocket, setWebsocket] = useState(null);
   const { files, parseAttachments } = useContext(DndUploaderContext);
@@ -429,6 +430,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
                   sendCommand={sendCommand}
                   updateHistory={setChatHistory}
                   regenerateAssistantMessage={regenerateAssistantMessage}
+                  bottomPadding={inputHeight}
                 />
               </MetricsProvider>
               <PromptInput
@@ -438,6 +440,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
                 attachments={files}
                 workspace={workspace}
                 centered={false}
+                onHeightChange={setInputHeight}
               />
             </div>
           </div>

@@ -40,6 +40,12 @@ export function ChatTooltips() {
         className="tooltip !text-xs"
       />
       <Tooltip
+        id="save-prompt-button"
+        place="bottom"
+        delayShow={300}
+        className="tooltip !text-xs"
+      />
+      <Tooltip
         id="feedback-button"
         place="bottom"
         delayShow={300}

@@ -16,6 +16,11 @@ const { AgentHandler } = require(".");
 const {
   WorkspaceAgentInvocation,
 } = require("../../models/workspaceAgentInvocation");
+const {
+  packAgentContentToPlainText,
+  parseAssemblingToolDisplay,
+  packEphemeralAgentMessages,
+} = require("./agentMessageContent");
 
 /**
  * This is an instance and functional Agent handler, but it does not utilize
@@ -409,13 +414,16 @@ class EphemeralAgentHandler extends AgentHandler {
   }
 
   /**
-   * Determine if the message provided is an agent invocation.
-   * @param {{message:string}} parameters
+   * Determine if the API chat flow should use the ephemeral agent handler.
+   * Mirrors `grepAgents` in `server/utils/chats/agents.js` (workspace agent mode or @agent handles).
+   * @param {{ message: string, workspace?: import("@prisma/client").workspaces, mode?: string }} parameters
    * @returns {boolean}
    */
-  static isAgentInvocation({ message }) {
+  static isAgentInvocation({ message, workspace = null, mode = null }) {
     const agentHandles = WorkspaceAgentInvocation.parseAgents(message);
     if (agentHandles.length > 0) return true;
+    if (workspace?.chatMode === "agent") return true;
+    if (mode === "agent") return true;
     return false;
   }
 }
@@ -448,25 +456,16 @@ class EphemeralEventListener extends EventEmitter {
 
   /**
    * Compacts all messages in class and returns them in a condensed format.
-   * @returns {{thoughts: string[], textResponse: string}}
+   * @returns {{thoughts: string[], textResponse: string|null, contentSegments: object[]}}
    */
   packMessages() {
-    const thoughts = [];
-    let textResponse = null;
-    for (let msg of this.messages) {
-      if (msg.type !== "statusResponse") {
-        textResponse = msg.content;
-      } else {
-        thoughts.push(msg.content);
-      }
-    }
-    return { thoughts, textResponse };
+    return packEphemeralAgentMessages(this.messages);
   }
 
   /**
    * Waits on the HTTP plugin to emit the 'closed' event from the agentHandler
    * so that we can compact and return all the messages in the current queue.
-   * @returns {Promise<{thoughts: string[], textResponse: string}>}
+   * @returns {Promise<{thoughts: string[], textResponse: string|null, contentSegments: object[]}>}
    */
   async waitForClose() {
     return new Promise((resolve) => {
@@ -482,7 +481,7 @@ class EphemeralEventListener extends EventEmitter {
    * emitting the thoughts and text response as soon as we get them.
    * @param {import("express").Response} response
    * @param {string} uuid - Unique identifier that is the same across chunks.
-   * @returns {Promise<{thoughts: string[], textResponse: string}>}
+   * @returns {Promise<{thoughts: string[], textResponse: string|null, contentSegments: object[]}>}
    */
   async streamAgentEvents(response, uuid) {
     const onChunkHandler = (data) => {
@@ -490,7 +489,10 @@ class EphemeralEventListener extends EventEmitter {
         return writeResponseChunk(response, {
           id: uuid,
           type: "agentThought",
-          thought: data.content,
+          thought:
+            typeof data.content === "string"
+              ? data.content
+              : packAgentContentToPlainText(data.content),
           sources: [],
           attachments: [],
           close: false,
@@ -499,10 +501,73 @@ class EphemeralEventListener extends EventEmitter {
         });
       }
 
+      if (data.type === "reportStreamEvent" && data.content) {
+        const ev = data.content;
+        if (ev.type === "textResponseChunk" && typeof ev.content === "string") {
+          return writeResponseChunk(response, {
+            id: uuid,
+            type: "agentTextChunk",
+            text: ev.content,
+            streamUuid: ev.uuid,
+            sources: [],
+            attachments: [],
+            close: false,
+            error: null,
+          });
+        }
+        if (ev.type === "toolCallInvocation") {
+          const display =
+            typeof ev.content === "string"
+              ? ev.content
+              : packAgentContentToPlainText(ev.content);
+          const parsed = parseAssemblingToolDisplay(display);
+          return writeResponseChunk(response, {
+            id: uuid,
+            type: "agentToolCall",
+            toolCallUuid: ev.uuid,
+            close: false,
+            error: null,
+            ...parsed,
+          });
+        }
+        if (ev.type === "fullTextResponse") {
+          const text =
+            typeof ev.content === "string"
+              ? ev.content
+              : packAgentContentToPlainText(ev.content);
+          return writeResponseChunk(response, {
+            id: uuid,
+            type: "agentFullText",
+            textResponse: text,
+            sources: [],
+            attachments: [],
+            close: false,
+            error: null,
+          });
+        }
+      }
+
+      if (data.type === "wssFailure") {
+        return writeResponseChunk(response, {
+          id: uuid,
+          type: "abort",
+          textResponse: null,
+          sources: [],
+          close: true,
+          error:
+            typeof data.content === "string"
+              ? data.content
+              : String(data.content ?? ""),
+        });
+      }
+
       return writeResponseChunk(response, {
         id: uuid,
         type: "textResponse",
-        textResponse: data.content,
+        textResponse:
+          typeof data.content === "string"
+            ? data.content
+            : packAgentContentToPlainText(data.content),
         sources: [],
         attachments: [],
         close: true,

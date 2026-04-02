@@ -105,11 +105,8 @@ class OpenAIProvider extends Provider {
     if (!attachments || !attachments.length) return [];
     
     return attachments.map((attachment) => ({
-      type: "image_url",
-      image_url: {
-        url: attachment.contentString,
-        detail: "high",
-      },
+      type: "input_image",
+      image_url: attachment.contentString,
     }));
   }
 

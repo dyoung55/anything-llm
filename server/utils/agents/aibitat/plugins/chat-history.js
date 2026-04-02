@@ -1,4 +1,7 @@
 const { WorkspaceChats } = require("../../../../models/workspaceChats");
+const {
+  packAgentContentToPlainText,
+} = require("../../agentMessageContent");
 
 /**
  * Plugin to save chat history to AnythingLLM DB.
@@ -49,9 +52,9 @@ const chatHistory = {
         const citations = aibitat._pendingCitations ?? [];
         await WorkspaceChats.new({
           workspaceId: Number(invocation.workspace_id),
-          prompt: prompt,
+          prompt: packAgentContentToPlainText(prompt),
           response: {
-            text: response,
+            text: packAgentContentToPlainText(response),
             sources: citations,
             attachments: attachments,
             type: "chat",
@@ -72,14 +75,14 @@ const chatHistory = {
         const existingSources = options?.sources ?? [];
         await WorkspaceChats.new({
           workspaceId: Number(invocation.workspace_id),
-          prompt: prompt,
+          prompt: packAgentContentToPlainText(prompt),
           response: {
             sources: [...existingSources, ...citations],
             // when we have a _storeSpecial called the options param can include a storedResponse() function
             // that will override the text property to store extra information in, depending on the special type of chat.
             text: options.hasOwnProperty("storedResponse")
               ? options.storedResponse(response)
-              : response,
+              : packAgentContentToPlainText(response),
             attachments: attachments,
             type: options?.saveAsType ?? "chat",
             metrics,

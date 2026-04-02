@@ -18,6 +18,9 @@ import usePromptInputStorage from "@/hooks/usePromptInputStorage";
 import ToolsMenu, { TOOLS_MENU_KEYBOARD_EVENT } from "./ToolsMenu";
 import { useSearchParams } from "react-router-dom";
 import { useIsAgentSessionActive } from "@/utils/chat/agent";
+import SavedPromptsPanel, {
+  SavedPromptsButton,
+} from "./SavedPromptsPanel";
 
 export const PROMPT_INPUT_ID = "primary-prompt-input";
 export const PROMPT_INPUT_EVENT = "set_prompt_input";
@@ -41,6 +44,7 @@ export default function PromptInput({
   centered = false,
   workspaceSlug = null,
   threadSlug = null,
+  onHeightChange = null,
 }) {
   const { t } = useTranslation();
   const { isDisabled } = useIsDisabled();
@@ -49,6 +53,8 @@ export default function PromptInput({
   const [showTools, setShowTools] = useState(false);
   const autoOpenedToolsRef = useRef(false);
   const toolsHighlightRef = useRef(-1);
+  const [showSavedPrompts, setShowSavedPrompts] = useState(false);
+  const wrapperRef = useRef(null);
   const formRef = useRef(null);
   const textareaRef = useRef(null);
   const [_, setFocused] = useState(false);
@@ -123,6 +129,21 @@ export default function PromptInput({
     setShowTools(false);
     submit(e);
   }
+
+  useEffect(() => {
+    if (!textareaRef.current) return;
+    textareaRef.current.style.height = "auto";
+    textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+  }, [promptInput]);
+
+  useEffect(() => {
+    if (!onHeightChange || !wrapperRef.current) return;
+    const observer = new ResizeObserver(([entry]) => {
+      onHeightChange(entry.contentRect.height);
+    });
+    observer.observe(wrapperRef.current);
+    return () => observer.disconnect();
+  }, [onHeightChange]);
 
   function resetTextAreaHeight() {
     if (!textareaRef.current) return;
@@ -311,12 +332,17 @@ export default function PromptInput({
 
   return (
     <div
+      ref={wrapperRef}
       className={
         centered
           ? "w-full relative flex justify-center items-center"
           : "w-full fixed md:absolute bottom-0 left-0 z-10 flex justify-center items-center pwa:pb-5"
       }
     >
+      <SavedPromptsPanel
+        showing={showSavedPrompts}
+        setShowing={setShowSavedPrompts}
+      />
       <form
         onSubmit={handleSubmit}
         className={
@@ -374,6 +400,10 @@ export default function PromptInput({
                       promptInput={promptInput}
                       textareaRef={textareaRef}
                       visible={!agentSessionActive}
+                    />
+                    <SavedPromptsButton
+                      showing={showSavedPrompts}
+                      setShowSavedPrompts={setShowSavedPrompts}
                     />
                   </div>
                   <ToolsButton

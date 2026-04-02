@@ -1,11 +1,18 @@
 import React, { memo, useState } from "react";
 import useCopyText from "@/hooks/useCopyText";
-import { Check, ThumbsUp, ArrowsClockwise, Copy } from "@phosphor-icons/react";
+import {
+  Check,
+  ThumbsUp,
+  ArrowsClockwise,
+  Copy,
+  BookmarkSimple,
+} from "@phosphor-icons/react";
 import Workspace from "@/models/workspace";
 import { EditMessageAction } from "./EditMessage";
 import RenderMetrics from "./RenderMetrics";
 import ActionMenu from "./ActionMenu";
 import { useTranslation } from "react-i18next";
+import SavePromptModal from "./SavePromptModal";
 
 const Actions = ({
   message,
@@ -18,6 +25,8 @@ const Actions = ({
   isEditing,
   role,
   metrics = {},
+  alignmentCls = "",
+  userPrompt = "",
 }) => {
   const { t } = useTranslation();
   const [selectedFeedback, setSelectedFeedback] = useState(feedbackScore);
@@ -33,7 +42,13 @@ const Actions = ({
       className={`flex w-full flex-wrap items-center gap-y-1 ${role === "user" ? "justify-end" : "justify-between"}`}
     >
       <div className="flex justify-start items-center gap-x-[8px]">
-        <div className="md:group-hover:opacity-100 transition-all duration-300 md:opacity-0 flex justify-start items-center gap-x-[8px]">
+        {role !== "user" && (
+          <SavePromptButton
+            userPrompt={userPrompt}
+            response={message}
+          />
+        )}
+        <div className="flex justify-start items-center gap-x-[8px]">
           <div
             className={`flex justify-start items-center gap-x-[8px] ${role === "user" ? "flex-row-reverse" : ""}`}
           >
@@ -138,6 +153,37 @@ function RegenerateMessage({ regenerateMessage, chatId }) {
         <ArrowsClockwise size={20} className="mb-1" weight="fill" />
       </button>
     </div>
+  );
+}
+
+function SavePromptButton({ userPrompt, response }) {
+  const [showModal, setShowModal] = useState(false);
+
+  return (
+    <>
+      <div className="mt-3 relative">
+        <button
+          onClick={() => setShowModal(true)}
+          data-tooltip-id="save-prompt-button"
+          data-tooltip-content="Save Prompt"
+          className="text-zinc-300"
+          aria-label="Save Prompt"
+        >
+          <BookmarkSimple
+            color="var(--theme-sidebar-footer-icon-fill)"
+            size={20}
+            className="mb-1"
+          />
+        </button>
+      </div>
+      {showModal && (
+        <SavePromptModal
+          prompt={userPrompt}
+          response={response}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </>
   );
 }
 

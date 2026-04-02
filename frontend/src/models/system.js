@@ -654,6 +654,59 @@ const System = {
         return [];
       });
   },
+  usageAnalytics: async (filters = {}) => {
+    return await fetch(`${API_BASE}/system/usage-analytics`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify(filters),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 422) return { error: data };
+        if (!res.ok) throw new Error(res.statusText || "Request failed");
+        return data;
+      })
+      .catch((e) => {
+        console.error(e);
+        return { error: { error: e.message } };
+      });
+  },
+  usageAnalyticsRows: async (filters = {}) => {
+    return await fetch(`${API_BASE}/system/usage-analytics/rows`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify(filters),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(res.statusText || "Request failed");
+        return data;
+      })
+      .catch((e) => {
+        console.error(e);
+        return { rows: [], totalCount: 0, error: e.message };
+      });
+  },
+  usageAnalyticsExport: async (filters = {}) => {
+    return await fetch(`${API_BASE}/system/usage-analytics/export`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify(filters),
+    })
+      .then(async (res) => {
+        if (res.status === 422) {
+          const data = await res.json().catch(() => ({}));
+          return { error: data };
+        }
+        if (!res.ok) throw new Error(res.statusText || "Export failed");
+        const text = await res.text();
+        return { csv: text };
+      })
+      .catch((e) => {
+        console.error(e);
+        return { error: { error: e.message } };
+      });
+  },
   eventLogs: async (offset = 0) => {
     return await fetch(`${API_BASE}/system/event-logs`, {
       method: "POST",
@@ -784,6 +837,62 @@ const System = {
     })
       .then((res) => {
         if (!res.ok) throw new Error("Could not delete slash command preset.");
+        return true;
+      })
+      .catch((e) => {
+        console.error(e);
+        return false;
+      });
+  },
+
+  getSavedPrompts: async function () {
+    return await fetch(`${API_BASE}/system/saved-prompts`, {
+      method: "GET",
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .then((res) => res?.prompts || [])
+      .catch((e) => {
+        console.error(e);
+        return [];
+      });
+  },
+
+  createSavedPrompt: async function (promptData = {}) {
+    return await fetch(`${API_BASE}/system/saved-prompts`, {
+      method: "POST",
+      body: JSON.stringify(promptData),
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .then((res) => ({ prompt: res?.prompt || null, error: res?.message }))
+      .catch((e) => {
+        console.error(e);
+        return { prompt: null, error: e.message };
+      });
+  },
+
+  updateSavedPrompt: async function (promptId, promptData = {}) {
+    return await fetch(`${API_BASE}/system/saved-prompts/${promptId}`, {
+      method: "POST",
+      body: JSON.stringify(promptData),
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .then((res) => ({ prompt: res?.prompt || null, error: res?.message }))
+      .catch((e) => {
+        console.error(e);
+        return { prompt: null, error: e.message };
+      });
+  },
+
+  deleteSavedPrompt: async function (promptId) {
+    return await fetch(`${API_BASE}/system/saved-prompts/${promptId}`, {
+      method: "DELETE",
+      headers: baseHeaders(),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Could not delete saved prompt.");
         return true;
       })
       .catch((e) => {

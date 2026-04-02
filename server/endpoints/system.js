@@ -50,11 +50,18 @@ const {
   generateRecoveryCodes,
 } = require("../utils/PasswordRecovery");
 const { SlashCommandPresets } = require("../models/slashCommandsPresets");
+const { SavedPrompts } = require("../models/savedPrompts");
 const { EncryptionManager } = require("../utils/EncryptionManager");
 const { BrowserExtensionApiKey } = require("../models/browserExtensionApiKey");
 const {
   chatHistoryViewable,
 } = require("../utils/middleware/chatHistoryViewable");
+const {
+  buildUsageWhere,
+  aggregateUsageSeries,
+  fetchUsageRows,
+  buildUsageExportCsv,
+} = require("../utils/workspaceUsageAnalytics");
 const {
   simpleSSOEnabled,
   simpleSSOLoginDisabled,
@@ -1342,6 +1349,94 @@ function systemEndpoints(app) {
     }
   );
 
+  const usageAnalyticsMiddleware = [
+    chatHistoryViewable,
+    validatedRequest,
+    flexUserRoleValid([ROLES.admin, ROLES.manager]),
+  ];
+
+  app.post(
+    "/system/usage-analytics",
+    usageAnalyticsMiddleware,
+    async (request, response) => {
+      try {
+        const body = reqBody(request);
+        const where = buildUsageWhere(body);
+        const result = await aggregateUsageSeries(where);
+        if (result.error === "too_many_rows") {
+          response.status(422).json({
+            error:
+              "Too many matching chats for this range. Narrow the date range or filters.",
+            code: result.error,
+            totalCount: result.totalCount,
+            max: result.max,
+          });
+          return;
+        }
+        response.status(200).json({
+          series: result.series,
+          totals: result.totals,
+        });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/system/usage-analytics/rows",
+    usageAnalyticsMiddleware,
+    async (request, response) => {
+      try {
+        const body = reqBody(request);
+        const { limit = 20, offset = 0, ...filterBody } = body;
+        const where = buildUsageWhere(filterBody);
+        const { rows, totalCount } = await fetchUsageRows(
+          where,
+          Number(limit) || 20,
+          Number(offset) || 0
+        );
+        response.status(200).json({ rows, totalCount });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/system/usage-analytics/export",
+    usageAnalyticsMiddleware,
+    async (request, response) => {
+      try {
+        const body = reqBody(request);
+        const where = buildUsageWhere(body);
+        const result = await buildUsageExportCsv(where);
+        if (result.error === "too_many_rows") {
+          response.status(422).json({
+            error:
+              "Too many matching chats to export. Narrow the date range or filters.",
+            code: result.error,
+            totalCount: result.totalCount,
+            max: result.max,
+          });
+          return;
+        }
+        await EventLogs.logEvent(
+          "exported_usage_analytics",
+          {},
+          response.locals.user?.id
+        );
+        response.setHeader("Content-Type", "text/csv; charset=utf-8");
+        response.status(200).send(result.csv);
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
   // Used for when a user in multi-user updates their own profile
   // from the UI.
   app.post("/system/user", [validatedRequest], async (request, response) => {
@@ -1501,6 +1596,120 @@ function systemEndpoints(app) {
         response.sendStatus(204);
       } catch (error) {
         console.error("Error deleting slash command preset:", error);
+        response.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.get(
+    "/system/saved-prompts",
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    async (request, response) => {
+      try {
+        const user = await userFromSession(request, response);
+        const prompts = await SavedPrompts.getUserPrompts(user?.id);
+        response.status(200).json({ prompts });
+      } catch (error) {
+        console.error("Error fetching saved prompts:", error);
+        response.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.post(
+    "/system/saved-prompts",
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    async (request, response) => {
+      try {
+        const { name, prompt, exampleResponse } = reqBody(request);
+        if (!name || !prompt || !exampleResponse) {
+          return response
+            .status(400)
+            .json({ message: "Name, Prompt, and Example Response are required" });
+        }
+
+        const user = await userFromSession(request, response);
+        const savedPrompt = await SavedPrompts.create(user?.id, {
+          name,
+          prompt,
+          exampleResponse,
+        });
+
+        if (!savedPrompt)
+          return response
+            .status(500)
+            .json({ message: "Failed to create saved prompt" });
+
+        response.status(201).json({ prompt: savedPrompt });
+      } catch (error) {
+        console.error("Error creating saved prompt:", error);
+        response.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.post(
+    "/system/saved-prompts/:savedPromptId",
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    async (request, response) => {
+      try {
+        const { savedPromptId } = request.params;
+        const user = await userFromSession(request, response);
+
+        const ownsPrompt = await SavedPrompts.get({
+          id: Number(savedPromptId),
+          uid: user?.id ?? 0,
+        });
+        if (!ownsPrompt)
+          return response
+            .status(403)
+            .json({ message: "Failed to update saved prompt" });
+
+        const { name, prompt, exampleResponse } = reqBody(request);
+        const updates = {};
+        if (name !== undefined) updates.name = String(name);
+        if (prompt !== undefined) updates.prompt = String(prompt);
+        if (exampleResponse !== undefined)
+          updates.exampleResponse = String(exampleResponse);
+
+        const updated = await SavedPrompts.update(
+          Number(savedPromptId),
+          updates
+        );
+        if (!updated)
+          return response
+            .status(500)
+            .json({ message: "Failed to update saved prompt" });
+
+        response.status(200).json({ prompt: updated });
+      } catch (error) {
+        console.error("Error updating saved prompt:", error);
+        response.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.delete(
+    "/system/saved-prompts/:savedPromptId",
+    [validatedRequest, flexUserRoleValid([ROLES.all])],
+    async (request, response) => {
+      try {
+        const { savedPromptId } = request.params;
+        const user = await userFromSession(request, response);
+
+        const ownsPrompt = await SavedPrompts.get({
+          id: Number(savedPromptId),
+          uid: user?.id ?? 0,
+        });
+        if (!ownsPrompt)
+          return response
+            .status(403)
+            .json({ message: "Failed to delete saved prompt" });
+
+        await SavedPrompts.delete(Number(savedPromptId));
+        response.sendStatus(204);
+      } catch (error) {
+        console.error("Error deleting saved prompt:", error);
         response.status(500).json({ message: "Internal server error" });
       }
     }

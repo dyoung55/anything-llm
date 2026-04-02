@@ -15,6 +15,7 @@ import {
   USER_PROMPT_INPUT_MAP,
 } from "@/utils/constants";
 import { useTranslation } from "react-i18next";
+import SavedPromptsManager from "@/components/SavedPromptsManager";
 
 export default function UserButton() {
   const { t } = useTranslation();
@@ -24,6 +25,7 @@ export default function UserButton() {
   const buttonRef = useRef();
   const [showMenu, setShowMenu] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [showSavedPrompts, setShowSavedPrompts] = useState(false);
   const [supportEmail, setSupportEmail] = useState("");
 
   const handleClose = (event) => {
@@ -38,6 +40,11 @@ export default function UserButton() {
 
   const handleOpenAccountModal = () => {
     setShowAccountSettings(true);
+    setShowMenu(false);
+  };
+
+  const handleOpenSavedPrompts = () => {
+    setShowSavedPrompts(true);
     setShowMenu(false);
   };
 
@@ -75,7 +82,7 @@ export default function UserButton() {
       {showMenu && (
         <div
           ref={menuRef}
-          className="w-fit rounded-lg absolute top-12 right-0 bg-theme-action-menu-bg p-2 flex items-center-justify-center"
+          className="w-fit min-w-[10rem] max-w-[16rem] rounded-lg absolute top-12 right-0 bg-theme-action-menu-bg p-2 flex items-center-justify-center"
         >
           <div className="flex flex-col gap-y-2">
             {mode === "multi" && !!user && (
@@ -86,6 +93,12 @@ export default function UserButton() {
                 {t("profile_settings.account")}
               </button>
             )}
+            <button
+              onClick={handleOpenSavedPrompts}
+              className="border-none text-white hover:bg-theme-action-menu-item-hover w-full text-left px-4 py-1.5 rounded-md"
+            >
+              Saved Prompts
+            </button>
             <a
               href={supportEmail}
               className="text-white hover:bg-theme-action-menu-item-hover w-full text-left px-4 py-1.5 rounded-md"
@@ -114,6 +127,9 @@ export default function UserButton() {
           user={user}
           hideModal={() => setShowAccountSettings(false)}
         />
+      )}
+      {showSavedPrompts && (
+        <SavedPromptsManager hideModal={() => setShowSavedPrompts(false)} />
       )}
     </div>
   );

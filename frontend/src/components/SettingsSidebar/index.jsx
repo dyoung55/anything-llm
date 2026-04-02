@@ -281,6 +281,13 @@ const SidebarOptions = ({ user = null, t }) => (
               roles: ["admin", "manager"],
             },
             {
+              hidden: !canViewChatHistory,
+              btnText: t("settings.usage"),
+              href: paths.settings.usage(),
+              flex: true,
+              roles: ["admin", "manager"],
+            },
+            {
               btnText: t("settings.invites"),
               href: paths.settings.invites(),
               roles: ["admin", "manager"],

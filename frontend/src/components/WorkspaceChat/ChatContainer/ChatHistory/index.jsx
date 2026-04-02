@@ -29,6 +29,7 @@ export default forwardRef(function (
     sendCommand,
     updateHistory,
     regenerateAssistantMessage,
+    bottomPadding = 0,
   },
   ref
 ) {
@@ -206,12 +207,13 @@ export default forwardRef(function (
   return (
     <ThoughtExpansionProvider>
       <div
-        className={`markdown text-white/80 light:text-theme-text-primary font-light ${textSizeClass} h-full md:h-[83%] pb-[100px] pt-6 md:pt-0 md:pb-20 md:mx-0 overflow-y-scroll flex flex-col items-center justify-start ${showScrollbar ? "show-scrollbar" : "no-scroll"}`}
+        className={`markdown text-white/80 light:text-theme-text-primary font-light ${textSizeClass} h-full md:h-[83%] pb-[100px] pt-6 md:pt-0 md:mx-0 overflow-y-scroll flex flex-col items-center justify-start ${showScrollbar ? "show-scrollbar" : "no-scroll"}`}
+        style={bottomPadding ? { paddingBottom: `${bottomPadding + 24}px` } : undefined}
         id="chat-history"
         ref={chatHistoryRef}
         onScroll={handleScroll}
       >
-        <div className="w-full max-w-[750px]">
+        <div className="w-full md:w-4/5">
           {compiledHistory.map((item, index) =>
             Array.isArray(item) ? renderStatusResponse(item, index) : item
           )}
@@ -299,6 +301,12 @@ function buildMessages({
         />
       );
     } else {
+      const userPrompt =
+        props.role === "assistant" &&
+        index > 0 &&
+        history[index - 1]?.role === "user"
+          ? history[index - 1].content
+          : "";
       acc.push(
         <HistoricalMessage
           key={index}
@@ -316,6 +324,7 @@ function buildMessages({
           saveEditedMessage={saveEditedMessage}
           forkThread={forkThread}
           metrics={props.metrics}
+          userPrompt={userPrompt}
         />
       );
     }

@@ -34,6 +34,8 @@ const HistoricalMessage = ({
   saveEditedMessage,
   forkThread,
   metrics = {},
+  alignmentCls = "",
+  userPrompt = "",
 }) => {
   const { t } = useTranslation();
   const { isEditing } = useEditMessage({ chatId, role });
@@ -90,7 +92,7 @@ const HistoricalMessage = ({
       <div
         key={uuid}
         onAnimationEnd={onEndAnimation}
-        className={`${isDeleted ? "animate-remove" : ""} flex justify-end w-full group`}
+        className={`${isDeleted ? "animate-remove" : ""} flex justify-end w-full`}
       >
         <div className="py-4 px-4 flex flex-col items-end">
           <div className="bg-zinc-800 light:bg-slate-100 rounded-[20px] rounded-br-none px-4 py-3.5 max-w-[600px] [&_p]:m-0">
@@ -124,7 +126,7 @@ const HistoricalMessage = ({
     <div
       key={uuid}
       onAnimationEnd={onEndAnimation}
-      className={`${isDeleted ? "animate-remove" : ""} flex justify-start w-full group`}
+      className={`${isDeleted ? "animate-remove" : ""} flex justify-start w-full`}
     >
       <div className="py-4 px-4 md:pl-0 flex flex-col w-full">
         {isEditing ? (
@@ -175,6 +177,8 @@ const HistoricalMessage = ({
             role={role}
             forkThread={forkThread}
             metrics={metrics}
+            alignmentCls={alignmentCls}
+            userPrompt={userPrompt}
           />
         </div>
         {role === "assistant" && <Citations sources={sources} />}
