@@ -5,7 +5,7 @@ import {
   ThumbsUp,
   ArrowsClockwise,
   Copy,
-  BookmarkSimple,
+  FloppyDisk,
 } from "@phosphor-icons/react";
 import Workspace from "@/models/workspace";
 import { EditMessageAction } from "./EditMessage";
@@ -169,7 +169,7 @@ function SavePromptButton({ userPrompt, response }) {
           className="text-zinc-300"
           aria-label="Save Prompt"
         >
-          <BookmarkSimple
+          <FloppyDisk
             color="var(--theme-sidebar-footer-icon-fill)"
             size={20}
             className="mb-1"
