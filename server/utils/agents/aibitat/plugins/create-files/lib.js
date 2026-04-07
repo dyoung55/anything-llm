@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs/promises");
 const fsSync = require("fs");
 const { v4: uuidv4 } = require("uuid");
+const { SystemSettings } = require("../../../../../models/systemSettings");
 
 /**
  * Manages file creation operations for binary document formats.
@@ -149,6 +150,29 @@ class CreateFilesManager {
   }
 
   /**
+   * Extracts width and height from a PNG buffer.
+   * PNG dimensions are stored at bytes 16-24 (width at 16-20, height at 20-24)
+   * @param {Buffer} pngBuffer - PNG file buffer
+   * @returns {{width: number, height: number} | null} Image dimensions or null if invalid
+   */
+  getPngDimensions(pngBuffer) {
+    try {
+      if (!pngBuffer || pngBuffer.length < 24) return null;
+
+      // PNG magic bytes
+      if (pngBuffer[0] !== 0x89 || pngBuffer[1] !== 0x50 || pngBuffer[2] !== 0x4e || pngBuffer[3] !== 0x47) {
+        return null;
+      }
+
+      const width = pngBuffer.readUInt32BE(16);
+      const height = pngBuffer.readUInt32BE(20);
+      return { width, height };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Registers an output to be persisted in the chat history.
    * This allows files and other outputs to be re-rendered when viewing historical messages.
    * @param {object} aibitat - The aibitat instance to register the output on
@@ -269,27 +293,52 @@ class CreateFilesManager {
   }
 
   /**
-   * Gets the AnythingLLM logo for branding.
+   * Gets the custom branding logo for document generation.
+   * Retrieves the logo filename from system settings (set via the UI).
+   * Returns null if custom branding logo is not found.
    * @param {Object} options
    * @param {boolean} [options.forDarkBackground=false] - True to get light logo (for dark backgrounds), false for dark logo (for light backgrounds)
-   * @param {"buffer"|"dataUri"} [options.format="buffer"] - Return format: "buffer" for raw Buffer, "dataUri" for base64 data URI
-   * @returns {Buffer|string|null} Logo as Buffer, data URI string, or null if file not found
+   * @param {"buffer"|"dataUri"|"path"} [options.format="buffer"] - Return format: "buffer" for raw Buffer, "dataUri" for base64 data URI, "path" for file path
+   * @returns {Promise<Buffer|string|null>} Logo as Buffer, data URI string, file path, or null if custom logo not found
    */
-  getLogo({ forDarkBackground = false, format = "buffer" } = {}) {
-    const assetsPath = path.join(__dirname, "../../../../../storage/assets");
-    const filename = forDarkBackground
-      ? "anything-llm.png"
-      : "anything-llm-invert.png";
+  async getLogo({ forDarkBackground = false, format = "buffer" } = {}) {
     try {
-      if (format === "dataUri") {
-        const base64 = fsSync.readFileSync(
-          path.join(assetsPath, filename),
-          "base64"
-        );
-        return `image/png;base64,${base64}`;
+      const assetsPath = process.env.STORAGE_DIR
+        ? path.join(process.env.STORAGE_DIR, "assets")
+        : path.join(__dirname, "../../../../../storage/assets");
+
+      // Get the custom logo filename from system settings
+      let logoFilename = null;
+      if (forDarkBackground) {
+        const setting = await SystemSettings.get({ label: "logo_filename_light" });
+        logoFilename = setting?.value;
+      } else {
+        const setting = await SystemSettings.get({ label: "logo_filename" });
+        logoFilename = setting?.value;
       }
-      return fsSync.readFileSync(path.join(assetsPath, filename));
-    } catch {
+
+      if (!logoFilename) {
+        return null;
+      }
+
+      const logoPath = path.join(assetsPath, logoFilename);
+
+      // Verify the file exists
+      if (!fsSync.existsSync(logoPath)) {
+        return null;
+      }
+
+      if (format === "path") {
+        return logoPath;
+      }
+
+      if (format === "dataUri") {
+        const base64 = fsSync.readFileSync(logoPath, "base64");
+        return `data:image/png;base64,${base64}`;
+      }
+      return fsSync.readFileSync(logoPath);
+    } catch (error) {
+      console.error("[CreateFilesManager] Error in getLogo:", error.message);
       return null;
     }
   }

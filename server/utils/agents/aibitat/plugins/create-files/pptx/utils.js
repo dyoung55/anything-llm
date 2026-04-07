@@ -7,55 +7,55 @@ const SLIDE_H = 5.625;
 
 function isDarkColor(hexColor) {
   const hex = (hexColor || "FFFFFF").replace("#", "");
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
 }
 
-function addBranding(slide, bgColor) {
+async function addBranding(slide, bgColor, options = {}) {
   const isDark = isDarkColor(bgColor);
-  const textColor = isDark ? "FFFFFF" : "000000";
-  const logo = createFilesLib.getLogo({
-    forDarkBackground: isDark,
+  const {
+    x = 8.7,
+    y = 5.22,
+    height = 0.3,
+    transparency = 50,
+  } = options;
+
+  // Get logo as buffer first to extract dimensions
+  const logoBuffer = await createFilesLib.getLogo({
+    forDarkBackground: !isDark, // Invert: dark background needs light logo
+    format: "buffer",
+  });
+
+  if (!logoBuffer) return;
+
+  const logoDimensions = createFilesLib.getPngDimensions(logoBuffer);
+  console.log(`[PPTX addBranding] isDark=${isDark}, logo found, dimensions=${logoDimensions ? `${logoDimensions.width}x${logoDimensions.height}` : "unknown"}`);
+
+  // Get logo as data URI
+  const logoDataUri = await createFilesLib.getLogo({
+    forDarkBackground: !isDark, // Invert: dark background needs light logo
     format: "dataUri",
   });
 
-  slide.addText("Created with", {
-    x: 7.85,
-    y: 5.06,
-    w: 1.85,
-    h: 0.12,
-    fontSize: 5.5,
-    color: textColor,
-    transparency: 78,
-    fontFace: "Calibri",
-    align: "center",
-    italic: true,
-  });
+  if (!logoDataUri) return;
 
-  if (logo) {
-    slide.addImage({
-      data: logo,
-      x: 8.025,
-      y: 5.17,
-      w: 1.5,
-      h: 0.24,
-      transparency: 78,
-    });
-  } else {
-    slide.addText("D-Mind", {
-      x: 7.85,
-      y: 5.17,
-      w: 1.85,
-      h: 0.24,
-      fontSize: 8,
-      color: textColor,
-      transparency: 78,
-      fontFace: "Calibri",
-      align: "center",
-    });
+  // Scale to specified height while maintaining aspect ratio
+  let width = height;
+  if (logoDimensions) {
+    const aspectRatio = logoDimensions.width / logoDimensions.height;
+    width = height * aspectRatio;
   }
+
+  slide.addImage({
+    data: logoDataUri,
+    x,
+    y,
+    w: width,
+    h: height,
+    transparency,
+  });
 }
 
 function addTopAccentBar(slide, pptx, theme) {
@@ -102,7 +102,7 @@ function addSlideFooter(slide, pptx, theme, slideNumber, totalSlides) {
   });
 }
 
-function renderTitleSlide(slide, pptx, { title, author }, theme) {
+async function renderTitleSlide(slide, pptx, { title, author }, theme) {
   slide.background = { color: theme.titleSlideBackground };
 
   slide.addText(title || "Untitled", {
@@ -144,10 +144,15 @@ function renderTitleSlide(slide, pptx, { title, author }, theme) {
     line: { color: theme.titleSlideAccentColor },
   });
 
-  addBranding(slide, theme.titleSlideBackground);
+  await addBranding(slide, theme.titleSlideBackground, {
+    x: 8.7,
+    y: 0.11,
+    height: 0.3,
+    transparency: 50,
+  });
 }
 
-function renderSectionSlide(
+async function renderSectionSlide(
   slide,
   pptx,
   slideData,
@@ -200,12 +205,17 @@ function renderSectionSlide(
     align: "left",
   });
 
-  addBranding(slide, theme.titleSlideBackground);
+  await addBranding(slide, theme.titleSlideBackground, {
+    x: 8.7,
+    y: 0.11,
+    height: 0.3,
+    transparency: 50,
+  });
 
   if (slideData.notes) slide.addNotes(slideData.notes);
 }
 
-function renderContentSlide(
+async function renderContentSlide(
   slide,
   pptx,
   slideData,
@@ -272,15 +282,25 @@ function renderContentSlide(
   }
 
   addSlideFooter(slide, pptx, theme, slideNumber, totalSlides);
-  addBranding(slide, theme.background);
+  await addBranding(slide, theme.background, {
+    x: 8.7,
+    y: 5.22,
+    height: 0.3,
+    transparency: 50,
+  });
 
   if (slideData.notes) slide.addNotes(slideData.notes);
 }
 
-function renderBlankSlide(slide, pptx, theme, slideNumber, totalSlides) {
+async function renderBlankSlide(slide, pptx, theme, slideNumber, totalSlides) {
   slide.background = { color: theme.background };
   addSlideFooter(slide, pptx, theme, slideNumber, totalSlides);
-  addBranding(slide, theme.background);
+  await addBranding(slide, theme.background, {
+    x: 8.7,
+    y: 5.22,
+    height: 0.3,
+    transparency: 50,
+  });
 }
 
 function addBulletContent(slide, content, theme, startY, maxHeight) {

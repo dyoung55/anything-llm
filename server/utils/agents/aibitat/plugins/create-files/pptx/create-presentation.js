@@ -252,10 +252,11 @@ module.exports.CreatePptxPresentation = {
 
               // Title slide
               const titleSlide = pptx.addSlide();
-              renderTitleSlide(titleSlide, pptx, { title, author }, theme);
+              await renderTitleSlide(titleSlide, pptx, { title, author }, theme);
 
               // Render every slide produced by the section agents
-              allSlides.forEach((slideData, index) => {
+              for (let index = 0; index < allSlides.length; index++) {
+                const slideData = allSlides[index];
                 const slide = pptx.addSlide();
                 const slideNumber = index + 1;
                 const layout = slideData.layout || "content";
@@ -263,7 +264,7 @@ module.exports.CreatePptxPresentation = {
                 switch (layout) {
                   case "title":
                   case "section":
-                    renderSectionSlide(
+                    await renderSectionSlide(
                       slide,
                       pptx,
                       slideData,
@@ -273,7 +274,7 @@ module.exports.CreatePptxPresentation = {
                     );
                     break;
                   case "blank":
-                    renderBlankSlide(
+                    await renderBlankSlide(
                       slide,
                       pptx,
                       theme,
@@ -282,7 +283,7 @@ module.exports.CreatePptxPresentation = {
                     );
                     break;
                   default:
-                    renderContentSlide(
+                    await renderContentSlide(
                       slide,
                       pptx,
                       slideData,
@@ -292,7 +293,7 @@ module.exports.CreatePptxPresentation = {
                     );
                     break;
                 }
-              });
+              }
 
               const buffer = await pptx.write({ outputType: "nodebuffer" });
               const bufferSizeKB = (buffer.length / 1024).toFixed(2);

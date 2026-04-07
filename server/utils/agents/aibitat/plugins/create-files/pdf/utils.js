@@ -3,6 +3,7 @@ const createFilesLib = require("../lib.js");
 /**
  * Applies D-Mind branding to a PDF document.
  * Adds a logo watermark or fallback text to the bottom-right of each page.
+ * PDF pages default to white background, so we use the light logo for visibility.
  * @param {PDFDocument} pdfDoc - The pdf-lib PDFDocument instance
  * @param {Object} pdfLib - The pdf-lib module exports (rgb, StandardFonts)
  * @returns {Promise<void>}
@@ -11,8 +12,9 @@ async function applyBranding(pdfDoc, { rgb, StandardFonts }) {
   const font = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
   const pages = pdfDoc.getPages();
 
-  const logoPng = createFilesLib.getLogo({
-    forDarkBackground: false,
+  // PDFs default to white (light) background, so use light logo for better visibility
+  const logoPng = await createFilesLib.getLogo({
+    forDarkBackground: true,
     format: "buffer",
   });
   const logoImage = logoPng ? await pdfDoc.embedPng(logoPng) : null;

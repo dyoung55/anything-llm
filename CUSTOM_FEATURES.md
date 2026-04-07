@@ -97,6 +97,7 @@ System-wide customization of appearance: banner, theme colors, custom logo.
 - `frontend/src/components/CustomBanner/` — Banner component
 - `frontend/src/pages/Admin/Appearance/` — Admin UI for branding settings
 - `frontend/src/locales/en/common.js` — Translation keys for branding
+- `server/utils/agents/aibitat/plugins/create-files/lib.js` — Create-files plugin now uses custom branding logos
 
 **System Settings Keys:**
 - `banner_enabled`
@@ -104,6 +105,12 @@ System-wide customization of appearance: banner, theme colors, custom logo.
 - `banner_timer`
 - `theme_color`
 - `custom_logo_url`
+
+**Custom Branding Logos for Create-Files Plugin:**
+- Place custom light logo (for dark backgrounds) at: `storage/assets/custom-logo-light.png`
+- Place custom dark logo (for light backgrounds) at: `storage/assets/custom-logo-dark.png`
+- If custom logos are not found, the plugin will not include a logo in generated documents
+- These logos are used in generated PDF, DOCX, and PPTX files created by the agent
 
 ---
 

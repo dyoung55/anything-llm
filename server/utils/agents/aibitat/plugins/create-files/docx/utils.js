@@ -4,6 +4,25 @@
  */
 
 /**
+ * Calculates scaled dimensions maintaining aspect ratio.
+ * @param {number} originalWidth - Original image width
+ * @param {number} originalHeight - Original image height
+ * @param {number} maxWidth - Maximum desired width
+ * @param {number} maxHeight - Maximum desired height
+ * @returns {{width: number, height: number}} Scaled dimensions
+ */
+function scaleImageMaintainingAspectRatio(originalWidth, originalHeight, maxWidth, maxHeight) {
+  const widthRatio = maxWidth / originalWidth;
+  const heightRatio = maxHeight / originalHeight;
+  const scale = Math.min(widthRatio, heightRatio);
+
+  return {
+    width: Math.round(originalWidth * scale),
+    height: Math.round(originalHeight * scale),
+  };
+}
+
+/**
  * Document style presets for professional-looking documents.
  */
 const DOCUMENT_STYLES = {
@@ -775,7 +794,7 @@ function createCoverPageSection(docx, options) {
   const { Paragraph, TextRun, AlignmentType, Footer, ImageRun, SectionType } =
     docx;
 
-  const { title, subtitle, author, date, theme, margins, logoBuffer } = options;
+  const { title, subtitle, author, date, theme, margins, logoBuffer, logoDimensions } = options;
 
   const coverChildren = [];
 
@@ -862,13 +881,24 @@ function createCoverPageSection(docx, options) {
 
   const coverFooterChildren = [];
   if (logoBuffer) {
+    let logoTransformation = { width: 100, height: 16 };
+
+    if (logoDimensions?.width && logoDimensions?.height) {
+      logoTransformation = scaleImageMaintainingAspectRatio(
+        logoDimensions.width,
+        logoDimensions.height,
+        100,
+        25
+      );
+    }
+
     coverFooterChildren.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [
           new ImageRun({
             data: logoBuffer,
-            transformation: { width: 100, height: 16 },
+            transformation: logoTransformation,
             type: "png",
           }),
         ],
@@ -967,7 +997,7 @@ function createRunningHeader(docx, documentTitle, theme) {
  * @param {Object} theme - Theme color configuration
  * @returns {Object} Footer configuration
  */
-function createRunningFooter(docx, logoBuffer, theme) {
+function createRunningFooter(docx, logoBuffer, theme, logoDimensions) {
   const {
     Footer,
     Paragraph,
@@ -995,13 +1025,23 @@ function createRunningFooter(docx, logoBuffer, theme) {
     ],
   });
 
+  let logoTransformation = { width: 80, height: 30 };
+  if (logoBuffer && logoDimensions?.width && logoDimensions?.height) {
+    logoTransformation = scaleImageMaintainingAspectRatio(
+      logoDimensions.width,
+      logoDimensions.height,
+      80,
+      30
+    );
+  }
+
   const brandingCell = logoBuffer
     ? new Paragraph({
         alignment: AlignmentType.RIGHT,
         children: [
           new ImageRun({
             data: logoBuffer,
-            transformation: { width: 80, height: 13 },
+            transformation: logoTransformation,
             type: "png",
           }),
         ],

@@ -13,6 +13,19 @@ const {
   DEFAULT_NUMBERING_CONFIG,
 } = require("./utils.js");
 
+/**
+ * Determines if a hex color is dark or light.
+ * @param {string} hexColor - Hex color code (with or without #)
+ * @returns {boolean} True if color is dark, false if light
+ */
+function isDarkColor(hexColor) {
+  const hex = (hexColor || "FFFFFF").replace("#", "");
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
+}
+
 module.exports.CreateDocxFile = {
   name: "create-docx-file",
   plugin: function () {
@@ -165,10 +178,13 @@ module.exports.CreateDocxFile = {
                 `create-docx-file: Parsed markdown to HTML (${html.length} chars), theme: ${theme}, margins: ${margins}`
               );
 
-              const logoBuffer = createFilesLib.getLogo({
-                forDarkBackground: false,
+              // Determine if theme background is dark to choose appropriate logo
+              const isDarkBg = isDarkColor(themeColors.coverBg);
+              const logoBuffer = await createFilesLib.getLogo({
+                forDarkBackground: isDarkBg,
                 format: "buffer",
               });
+              const logoDimensions = logoBuffer ? createFilesLib.getPngDimensions(logoBuffer) : null;
 
               const docElements = await htmlToDocxElements(
                 html,
@@ -203,6 +219,7 @@ module.exports.CreateDocxFile = {
                     theme: themeColors,
                     margins: marginConfig,
                     logoBuffer,
+                    logoDimensions,
                   })
                 );
 
@@ -221,7 +238,7 @@ module.exports.CreateDocxFile = {
                     ),
                   },
                   footers: {
-                    default: createRunningFooter(docx, logoBuffer, themeColors),
+                    default: createRunningFooter(docx, logoBuffer, themeColors, logoDimensions),
                   },
                 });
               } else {
@@ -233,7 +250,7 @@ module.exports.CreateDocxFile = {
                   },
                   children: docElements,
                   footers: {
-                    default: createRunningFooter(docx, logoBuffer, themeColors),
+                    default: createRunningFooter(docx, logoBuffer, themeColors, logoDimensions),
                   },
                 });
               }
