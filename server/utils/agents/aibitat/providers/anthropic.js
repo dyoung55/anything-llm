@@ -1,8 +1,10 @@
 const Anthropic = require("@anthropic-ai/sdk");
+const { AnthropicLLM } = require("../../../AiProviders/anthropic");
 const { RetryError } = require("../error.js");
 const Provider = require("./ai-provider.js");
 const { v4 } = require("uuid");
 const { safeJsonParse } = require("../../../http");
+const { getAnythingLLMUserAgent } = require("../../../../endpoints/utils");
 
 /**
  * Maximum output tokens per Anthropic model.
@@ -43,13 +45,16 @@ const MODEL_MAX_OUTPUT_TOKENS = {
  */
 class AnthropicProvider extends Provider {
   model;
-  maxTokens;
+  maxTokens = null;
 
   constructor(config = {}) {
     const {
       options = {
         apiKey: process.env.ANTHROPIC_API_KEY,
         maxRetries: 3,
+        defaultHeaders: {
+          "User-Agent": getAnythingLLMUserAgent(),
+        },
       },
       model = "claude-3-5-sonnet-20240620",
       apiKey = null,
@@ -63,6 +68,26 @@ class AnthropicProvider extends Provider {
     super(client);
     this.model = model;
     this.maxTokens = MODEL_MAX_OUTPUT_TOKENS[model] ?? 4096;
+  }
+
+  /**
+   * Whether this provider supports native OpenAI-compatible tool calling.
+   * - Anthropic always supports tool calling.
+   * @returns {boolean}
+   */
+  supportsNativeToolCalling() {
+    return true;
+  }
+
+  /**
+   * Fetches the maximum number of tokens the model should generate in its response.
+   * This varies per model but will fallback to 4096 if the model is not found.
+   * @returns {Promise<number>} The maximum output tokens limit for API calls.
+   */
+  async assertModelMaxTokens() {
+    if (this.maxTokens) return this.maxTokens;
+    this.maxTokens = await AnthropicLLM.fetchModelMaxTokens(this.model);
+    return this.maxTokens;
   }
 
   /**
@@ -112,27 +137,15 @@ class AnthropicProvider extends Provider {
   }
 
   /**
-   * Format attachments for Anthropic's API
-   * @param {Array} attachments - Array of attachment objects
-   * @returns {Array} Formatted attachment content blocks
+   * Parse a data URL into media type and base64 data
+   * @param {string} dataUrl - Data URL like "data:image/jpeg;base64,/9j/..."
+   * @returns {{mediaType: string, data: string}|null}
    */
-  #formatAttachments(attachments = []) {
-    if (!attachments || !attachments.length) return [];
-    
-    return attachments.map((attachment) => {
-      const base64Data = attachment.contentString.includes("base64,")
-        ? attachment.contentString.split("base64,")[1]
-        : attachment.contentString;
-      
-      return {
-        type: "image",
-        source: {
-          type: "base64",
-          media_type: attachment.mime || "image/jpeg",
-          data: base64Data,
-        },
-      };
-    });
+  #parseDataUrl(dataUrl) {
+    if (!dataUrl || !dataUrl.startsWith("data:")) return null;
+    const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!matches) return null;
+    return { mediaType: matches[1], data: matches[2] };
   }
 
   #prepareMessages(messages = []) {
@@ -183,9 +196,21 @@ class AnthropicProvider extends Provider {
             item.type !== "text" || (item.text && item.text.trim().length > 0)
         );
 
-        // Add attachments if present in the message
+        // Add image attachments if present (for vision/multimodal support)
         if (message.attachments && message.attachments.length > 0) {
-          content.push(...this.#formatAttachments(message.attachments));
+          for (const attachment of message.attachments) {
+            const parsed = this.#parseDataUrl(attachment.contentString);
+            if (parsed) {
+              content.push({
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: parsed.mediaType,
+                  data: parsed.data,
+                },
+              });
+            }
+          }
         }
 
         if (content.length === 0) return processedMessages;
@@ -207,8 +232,9 @@ class AnthropicProvider extends Provider {
           // Merge consecutive messages from the same role.
           lastMessage.content.push(...content);
         } else {
-          const { attachments, ...messageWithoutAttachments } = message;
-          processedMessages.push({ ...messageWithoutAttachments, content });
+          // Don't pass attachments to the final message object
+          const { attachments: _, ...restOfMessage } = message;
+          processedMessages.push({ ...restOfMessage, content });
         }
 
         return processedMessages;
@@ -252,6 +278,7 @@ class AnthropicProvider extends Provider {
    * @returns {Promise<{ functionCall: any, textResponse: string, uuid: string }>} - The result of the chat completion.
    */
   async stream(messages, functions = [], eventHandler = null) {
+    await this.assertModelMaxTokens();
     this.resetUsage();
 
     try {
@@ -399,6 +426,7 @@ class AnthropicProvider extends Provider {
    * @returns The completion.
    */
   async complete(messages, functions = []) {
+    await this.assertModelMaxTokens();
     this.resetUsage();
 
     try {

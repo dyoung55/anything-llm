@@ -10,6 +10,7 @@ const MCPCompatibilityLayer = require("../utils/MCP");
 const { SystemSettings } = require("../models/systemSettings");
 const { safeJsonParse } = require("../utils/http");
 const AgentPlugins = require("../utils/agents/aibitat/plugins");
+const ImportedPlugin = require("../utils/agents/imported");
 
 function workspaceAgentConfigEndpoints(app) {
   if (!app) return;
@@ -292,18 +293,10 @@ function workspaceAgentConfigEndpoints(app) {
 
         const config = WorkspaceAgentConfig.getConfig(slug);
 
-        // Get global skills
+        // Get global disabled default skills
         const _disabledDefaultSkills = safeJsonParse(
           await SystemSettings.getValueOrFallback(
             { label: "disabled_agent_skills" },
-            "[]"
-          ),
-          []
-        );
-
-        const _configurableSkills = safeJsonParse(
-          await SystemSettings.getValueOrFallback(
-            { label: "default_agent_skills" },
             "[]"
           ),
           []
@@ -324,7 +317,22 @@ function workspaceAgentConfigEndpoints(app) {
           isDefault: true,
         }));
 
-        const configurableSkills = _configurableSkills.map((skillName) => ({
+        // Build static catalog of all configurable (opt-in) skills from AgentPlugins
+        const ALL_CONFIGURABLE_SKILLS = [
+          AgentPlugins.rechart.name,          // "create-chart"
+          AgentPlugins.webBrowsing.name,      // "web-browsing"
+          AgentPlugins.sqlAgent.name,         // "sql-agent"
+          AgentPlugins.filesystemAgent.name,  // "filesystem-agent" (v1.12.0)
+          AgentPlugins.createFilesAgent.name, // "create-files-agent" (v1.12.0)
+        ];
+
+        // Include any installed custom/community plugins
+        const importedPlugins = ImportedPlugin.listImportedPlugins();
+        importedPlugins.forEach((plugin) => {
+          ALL_CONFIGURABLE_SKILLS.push(`@@${plugin.hubId}`);
+        });
+
+        const configurableSkills = ALL_CONFIGURABLE_SKILLS.map((skillName) => ({
           name: skillName,
           enabled: config.enabledSkills.includes(skillName),
           isDefault: false,

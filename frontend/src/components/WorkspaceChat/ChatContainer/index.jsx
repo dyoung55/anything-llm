@@ -232,11 +232,13 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
       // Override hook for new messages to now go to agents until the connection closes
       if (!!websocket) {
         if (!promptMessage || !promptMessage?.userMessage) return false;
+        const attachments = promptMessage?.attachments ?? parseAttachments();
         window.dispatchEvent(new CustomEvent(CLEAR_ATTACHMENTS_EVENT));
         websocket.send(
           JSON.stringify({
             type: "awaitingFeedback",
             feedback: promptMessage?.userMessage,
+            attachments,
           })
         );
         return;
@@ -380,6 +382,7 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
                 {t("main-page.greeting")}
               </h1>
               <PromptInput
+                workspace={workspace}
                 submit={handleSubmit}
                 isStreaming={loadingResponse}
                 sendCommand={sendCommand}
@@ -418,33 +421,39 @@ export default function ChatContainer({ workspace, knownHistory = [] }) {
       >
         {isMobile && <SidebarMobileHeader />}
         <TextSizeMenu />
-        <WorkspaceModelPicker workspaceSlug={workspace.slug} />
-        <DnDFileUploaderWrapper>
-          <div className="flex flex-col h-full w-full">
-            <div className="contents">
-              <MetricsProvider>
-                <ChatHistory
-                  ref={chatHistoryRef}
-                  history={chatHistory}
+        <div className="flex-1 min-w-0 transition-all duration-500 relative md:rounded-[16px] bg-zinc-900 light:bg-white text-white light:text-slate-900 h-full overflow-hidden border-none light:border-solid light:border light:border-theme-modal-border">
+          {isMobile && <SidebarMobileHeader />}
+          <WorkspaceModelPicker workspaceSlug={workspace.slug} />
+          <DnDFileUploaderWrapper>
+            <div className="flex flex-col h-full w-full pb-20 md:pb-0">
+              <div className="contents">
+                <MetricsProvider>
+                  <ChatHistory
+                    ref={chatHistoryRef}
+                    history={chatHistory}
+                    workspace={workspace}
+                    sendCommand={sendCommand}
+                    updateHistory={setChatHistory}
+                    regenerateAssistantMessage={regenerateAssistantMessage}
+                    bottomPadding={inputHeight}
+                    websocket={websocket}
+                  />
+                </MetricsProvider>
+                <PromptInput
                   workspace={workspace}
+                  submit={handleSubmit}
+                  isStreaming={loadingResponse}
                   sendCommand={sendCommand}
                   updateHistory={setChatHistory}
                   regenerateAssistantMessage={regenerateAssistantMessage}
-                  bottomPadding={inputHeight}
+                  attachments={files}
+                  centered={false}
+                  onHeightChange={setInputHeight}
                 />
-              </MetricsProvider>
-              <PromptInput
-                submit={handleSubmit}
-                isStreaming={loadingResponse}
-                sendCommand={sendCommand}
-                attachments={files}
-                workspace={workspace}
-                centered={false}
-                onHeightChange={setInputHeight}
-              />
+              </div>
             </div>
-          </div>
-        </DnDFileUploaderWrapper>
+          </DnDFileUploaderWrapper>
+        </div>
         <ChatTooltips />
       </div>
       <SourcesSidebar />

@@ -29,6 +29,7 @@ function getTabs(t, user) {
 }
 
 /**
+ * @param {Workspace} props.workspace - the workspace object
  * @param {boolean} props.showing
  * @param {function} props.setShowing
  * @param {function} props.sendCommand

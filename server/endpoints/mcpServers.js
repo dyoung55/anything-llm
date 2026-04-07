@@ -127,7 +127,7 @@ function mcpServersEndpoints(app) {
     async (request, response) => {
       try {
         const { config } = reqBody(request);
-        
+
         if (!config || typeof config !== "object" || !config.mcpServers) {
           return response.status(400).json({
             success: false,
@@ -137,7 +137,7 @@ function mcpServersEndpoints(app) {
 
         const fs = require("fs");
         const mcp = new MCPCompatibilityLayer();
-        
+
         // Write the config to the file
         fs.writeFileSync(
           mcp.mcpServerJSONPath,
@@ -157,6 +157,33 @@ function mcpServersEndpoints(app) {
         return response.status(500).json({
           success: false,
           error: error.message,
+        });
+      }
+    }
+  );
+
+  app.post(
+    "/mcp-servers/toggle-tool",
+    [validatedRequest, flexUserRoleValid([ROLES.admin])],
+    async (request, response) => {
+      try {
+        const { serverName, toolName, enabled } = reqBody(request);
+        const result = await new MCPCompatibilityLayer().toggleToolSuppression(
+          serverName,
+          toolName,
+          enabled
+        );
+        return response.status(200).json({
+          success: result.success,
+          error: result.error,
+          suppressedTools: result.suppressedTools,
+        });
+      } catch (error) {
+        console.error("Error toggling MCP tool:", error);
+        return response.status(500).json({
+          success: false,
+          error: error.message,
+          suppressedTools: [],
         });
       }
     }

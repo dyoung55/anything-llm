@@ -1,6 +1,5 @@
 import { v4 } from "uuid";
 import { safeJsonParse } from "../request";
-import { saveAs } from "file-saver";
 import { API_BASE } from "../constants";
 import { useEffect, useState } from "react";
 import { emitAssistantMessageCompleteEvent } from "@/components/contexts/TTSProvider";
@@ -9,10 +8,11 @@ export const AGENT_SESSION_START = "agentSessionStart";
 export const AGENT_SESSION_END = "agentSessionEnd";
 const handledEvents = [
   "statusResponse",
-  "fileDownload",
+  "fileDownloadCard",
   "awaitingFeedback",
   "wssFailure",
   "rechartVisualize",
+  "toolApprovalRequest",
   // Streaming events
   "reportStreamEvent",
 ];
@@ -48,7 +48,12 @@ export default function handleSocketResponse(socket, event, setChatHistory) {
     });
   }
 
-  if (!handledEvents.includes(data.type) || !data.content) return;
+  // toolApprovalRequest doesn't have content field, so check separately
+  if (data.type === "toolApprovalRequest") {
+    if (!data.requestId || !data.skillName) return;
+  } else if (!handledEvents.includes(data.type) || !data.content) {
+    return;
+  }
 
   if (data.type === "reportStreamEvent") {
     // Enable agent streaming for the next message so we can handle streaming or non-streaming responses
@@ -100,6 +105,9 @@ export default function handleSocketResponse(socket, event, setChatHistory) {
         // Providers like Gemini send large chunks and can complete in a single chunk before the update logic can convert it.
         // Other providers send many small chunks so the second chunk triggers the update logic to fix the type.
         if (data.content.type === "textResponseChunk") {
+          // If this first chunk is just a non-text char (like \n, \t, etc.) then we need to ignore it.
+          // Some providers like LMStudio will do this and it depends on the chat template as well.
+          if (data.content.content.trim() === "") return prev;
           return [
             ...prev.filter((msg) => !!msg.content),
             {
@@ -191,9 +199,24 @@ export default function handleSocketResponse(socket, event, setChatHistory) {
     });
   }
 
-  if (data.type === "fileDownload") {
-    saveAs(data.content.b64Content, data.content.filename ?? "unknown.txt");
-    return;
+  if (data.type === "fileDownloadCard") {
+    return setChatHistory((prev) => {
+      return [
+        ...prev.filter((msg) => !!msg.content),
+        {
+          type: "fileDownloadCard",
+          uuid: v4(),
+          content: data.content,
+          role: "assistant",
+          sources: [],
+          closed: true,
+          error: null,
+          animate: false,
+          pending: false,
+          metrics: data.metrics || {},
+        },
+      ];
+    });
   }
 
   if (data.type === "rechartVisualize") {
@@ -229,6 +252,31 @@ export default function handleSocketResponse(socket, event, setChatHistory) {
           error: data.content,
           animate: false,
           pending: false,
+          metrics: {},
+        },
+      ];
+    });
+  }
+
+  if (data.type === "toolApprovalRequest") {
+    return setChatHistory((prev) => {
+      return [
+        ...prev.filter((msg) => !!msg.content),
+        {
+          uuid: v4(),
+          type: "toolApprovalRequest",
+          requestId: data.requestId,
+          skillName: data.skillName,
+          payload: data.payload,
+          description: data.description,
+          timeoutMs: data.timeoutMs,
+          content: `Approval requested for ${data.skillName}`,
+          role: "assistant",
+          sources: [],
+          closed: false,
+          error: null,
+          animate: false,
+          pending: true,
           metrics: {},
         },
       ];

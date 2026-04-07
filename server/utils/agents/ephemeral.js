@@ -5,7 +5,10 @@ const MCPCompatibilityLayer = require("../MCP");
 const { AgentFlows } = require("../agentFlows");
 const { httpSocket } = require("./aibitat/plugins/http-socket.js");
 const { User } = require("../../models/user");
+const { Workspace } = require("../../models/workspace");
 const { WorkspaceChats } = require("../../models/workspaceChats");
+const { WorkspaceParsedFiles } = require("../../models/workspaceParsedFiles");
+const { DocumentManager } = require("../DocumentManager");
 const { safeJsonParse } = require("../http");
 const {
   USER_AGENT,
@@ -40,10 +43,10 @@ class EphemeralAgentHandler extends AgentHandler {
   #sessionId = null;
   /** @type {string|null} the prompt to use for the agent */
   #prompt = null;
-  /** @type {Array} the attachments to use for the agent */
-  #attachments = [];
   /** @type {string[]} the functions to load into the agent (Aibitat plugins) */
   #funcsToLoad = [];
+  /** @type {Array<{name: string, mime: string, contentString: string}>} attachments for multimodal support */
+  #attachments = [];
 
   /** @type {AIbitat|null} */
   aibitat = null;
@@ -62,7 +65,7 @@ class EphemeralAgentHandler extends AgentHandler {
    * userId: import("@prisma/client").users["id"]|null,
    * threadId: import("@prisma/client").workspace_threads["id"]|null,
    * sessionId: string|null,
-   * attachments: Array
+   * attachments: Array<{name: string, mime: string, contentString: string}>
    * }} parameters
    */
   constructor({
@@ -86,6 +89,7 @@ class EphemeralAgentHandler extends AgentHandler {
     this.#userId = userId;
     this.#threadId = threadId;
     this.#sessionId = sessionId;
+    this.#attachments = attachments;
   }
 
   log(text, ...args) {
@@ -367,9 +371,82 @@ class EphemeralAgentHandler extends AgentHandler {
     return this;
   }
 
+  /**
+   * Fetch fresh parsed files and pinned documents, format them for injection into user messages.
+   * Called on every chat turn to ensure context is always up-to-date.
+   * @returns {Promise<string>} Formatted context string to append to user message
+   */
+  async #fetchParsedFileContext() {
+    const user = this.#userId ? { id: this.#userId } : null;
+    const thread = this.#threadId ? { id: this.#threadId } : null;
+    const documentManager = new DocumentManager({
+      workspace: this.#workspace,
+    });
+
+    return Promise.all([
+      WorkspaceParsedFiles.getContextFiles(this.#workspace, thread, user),
+      documentManager.pinnedDocs(),
+    ])
+      .then(([parsedFiles, pinnedDocs]) => {
+        const allDocuments = [
+          ...(parsedFiles || []).map((doc) => ({
+            name: doc.title || "Uploaded Document",
+            content: doc.pageContent,
+          })),
+          ...(pinnedDocs || []).map((doc) => ({
+            name: doc.title || doc.metadata?.title || "Pinned Document",
+            content: doc.pageContent,
+          })),
+        ];
+
+        if (allDocuments.length === 0) return "";
+
+        if (parsedFiles?.length > 0)
+          this.log(
+            `Injecting ${parsedFiles.length} parsed file(s) into user message`
+          );
+        if (pinnedDocs?.length > 0)
+          this.log(
+            `Injecting ${pinnedDocs.length} pinned document(s) into user message`
+          );
+
+        return (
+          "\n\n<attached_documents>\n" +
+          allDocuments
+            .map((doc, i) => {
+              const filename = doc.name || `Document ${i + 1}`;
+              return `<document name="${filename}">\n${doc.content}\n</document>`;
+            })
+            .join("\n") +
+          "\n</attached_documents>"
+        );
+      })
+      .catch((e) => {
+        this.log("Error fetching parsed file context", e.message);
+        return "";
+      });
+  }
+
+  /**
+   * Strip the @agent command from the message if it exists.
+   * Prevents hallucination by the agent when the @agent command is used from the model thinking
+   * it is an agent or something itself.
+   * If the user sent nothing after the @agent command - assume its a greeting.
+   * @param {string} message - The message to strip the @agent command from.
+   * @returns {string} The message with the @agent command stripped.
+   */
+  #stripAgentCommand(message = "") {
+    const stripped = String(message)
+      .replace(/^@agent\s*/, "")
+      .trim();
+    if (!stripped) return "Hello!";
+    return stripped;
+  }
+
   async createAIbitat(
     args = {
       handler: null,
+      telegramChatId: null,
     }
   ) {
     this.aibitat = new AIbitat({
@@ -387,13 +464,19 @@ class EphemeralAgentHandler extends AgentHandler {
       },
     });
 
+    // Register callback to fetch fresh parsed file context on each chat turn
+    // This injects parsed files into user messages instead of system prompt
+    this.aibitat.fetchParsedFileContext = () => this.#fetchParsedFileContext();
+
     // Attach HTTP response object if defined for chunk streaming.
+    // When telegramChatId is provided, tool approval via Telegram is enabled.
     this.log(`Attached ${httpSocket.name} plugin to Agent cluster`);
     this.aibitat.use(
       httpSocket.plugin({
         handler: args.handler,
         muteUserReply: true,
         introspection: true,
+        telegramChatId: args.telegramChatId,
       })
     );
 
@@ -408,22 +491,43 @@ class EphemeralAgentHandler extends AgentHandler {
     return this.aibitat.start({
       from: USER_AGENT.name,
       to: this.channel ?? WORKSPACE_AGENT.name,
-      content: this.#prompt,
+      content: this.#stripAgentCommand(this.#prompt),
       attachments: this.#attachments || [],
     });
   }
 
   /**
-   * Determine if the API chat flow should use the ephemeral agent handler.
-   * Mirrors `grepAgents` in `server/utils/chats/agents.js` (workspace agent mode or @agent handles).
-   * @param {{ message: string, workspace?: import("@prisma/client").workspaces, mode?: string }} parameters
+   * Determine if the message should invoke the agent handler.
+   * This is true when:
+   * - The user explicitly invokes an agent (via @agent prefix)
+   * - The workspace chatMode is "agent" (our custom always-on agent mode)
+   * - The workspace is in "automatic" mode AND the provider supports native tool calling
+   * @param {{message: string, workspace?: object, chatMode?: string}} parameters
+   * @returns {Promise<boolean>}
+   */
+  static async isAgentInvocation({
+    message,
+    workspace = null,
+    chatMode = null,
+  }) {
+    if (this.#isAgentCommandInvocation({ message })) return true;
+    if (chatMode === "agent") return true;  // Our custom always-on agent mode
+    if (chatMode === "automatic") {
+      if (!workspace) return false;
+      if (await Workspace.supportsNativeToolCalling(workspace)) return true;
+      return false;
+    }
+    return false;
+  }
+
+  /**
+   * Determine if the message provided is an agent invocation via command (@agent prefix).
+   * @param {{message:string}} parameters
    * @returns {boolean}
    */
-  static isAgentInvocation({ message, workspace = null, mode = null }) {
+  static #isAgentCommandInvocation({ message }) {
     const agentHandles = WorkspaceAgentInvocation.parseAgents(message);
     if (agentHandles.length > 0) return true;
-    if (workspace?.chatMode === "agent") return true;
-    if (mode === "agent") return true;
     return false;
   }
 }

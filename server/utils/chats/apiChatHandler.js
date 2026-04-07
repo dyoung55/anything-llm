@@ -18,7 +18,12 @@ const { Telemetry } = require("../../models/telemetry");
 const { CollectorApi } = require("../collectorApi");
 const fs = require("fs");
 const path = require("path");
-const { hotdirPath, normalizePath, isWithin } = require("../files");
+const {
+  hotdirPath,
+  normalizePath,
+  isWithin,
+  sanitizeFileName,
+} = require("../files");
 /**
  * @typedef ResponseObject
  * @property {string} id - uuid of response
@@ -73,8 +78,8 @@ async function processDocumentAttachments(attachments = []) {
       if (dataUriMatch) base64Data = dataUriMatch[1];
 
       const buffer = Buffer.from(base64Data, "base64");
-      const filename = normalizePath(
-        attachment.name || `attachment-${uuidv4()}`
+      const filename = sanitizeFileName(
+        normalizePath(attachment.name || `attachment-${uuidv4()}`)
       );
       const filePath = normalizePath(path.join(hotdirPath, filename));
       if (!isWithin(hotdirPath, filePath))
@@ -112,7 +117,7 @@ function resolveApiChatMode(mode, workspace) {
  * @param {{
  *  workspace: import("@prisma/client").workspaces,
  *  message:string,
- *  mode: "chat"|"query",
+ *  mode: "automatic"|"chat"|"query"|"agent",
  *  user: import("@prisma/client").users|null,
  *  thread: import("@prisma/client").workspace_threads|null,
  *  sessionId: string|null,
@@ -124,7 +129,7 @@ function resolveApiChatMode(mode, workspace) {
 async function chatSync({
   workspace,
   message = null,
-  mode,
+  mode = null,
   user = null,
   thread = null,
   sessionId = null,
@@ -163,10 +168,10 @@ async function chatSync({
   message = processedMessage;
 
   if (
-    EphemeralAgentHandler.isAgentInvocation({
+    await EphemeralAgentHandler.isAgentInvocation({
       message,
       workspace,
-      mode: chatMode,
+      chatMode,
     })
   ) {
     await Telemetry.sendTelemetry("agent_chat_started");
@@ -476,7 +481,7 @@ async function chatSync({
  * response: import("express").Response,
  *  workspace: import("@prisma/client").workspaces,
  *  message:string,
- *  mode: "chat"|"query",
+ *  mode: "automatic"|"chat"|"query",
  *  user: import("@prisma/client").users|null,
  *  thread: import("@prisma/client").workspace_threads|null,
  *  sessionId: string|null,
@@ -489,7 +494,7 @@ async function streamChat({
   response,
   workspace,
   message = null,
-  mode,
+  mode = null,
   user = null,
   thread = null,
   sessionId = null,
@@ -530,10 +535,10 @@ async function streamChat({
   message = processedMessage;
 
   if (
-    EphemeralAgentHandler.isAgentInvocation({
+    await EphemeralAgentHandler.isAgentInvocation({
       message,
       workspace,
-      mode: chatMode,
+      chatMode,
     })
   ) {
     await Telemetry.sendTelemetry("agent_chat_started");

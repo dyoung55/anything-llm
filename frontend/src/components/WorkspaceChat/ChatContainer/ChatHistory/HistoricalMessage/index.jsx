@@ -18,6 +18,7 @@ import paths from "@/utils/paths";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { chatQueryRefusalResponse } from "@/utils/chat";
+import HistoricalOutputs from "./HistoricalOutputs";
 
 const HistoricalMessage = ({
   uuid = v4(),
@@ -36,6 +37,7 @@ const HistoricalMessage = ({
   metrics = {},
   alignmentCls = "",
   userPrompt = "",
+  outputs = [],
 }) => {
   const { t } = useTranslation();
   const { isEditing } = useEditMessage({ chatId, role });
@@ -160,6 +162,7 @@ const HistoricalMessage = ({
               </Link>
             )}
             <ChatAttachments attachments={attachments} />
+            <HistoricalOutputs outputs={outputs} />
           </div>
         )}
         {!!chatId && (

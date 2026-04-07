@@ -25,6 +25,9 @@ const chatHistory = {
             // the USER and the last being from anyone other than the user.
             if (prev.from !== "USER" || last.from === "USER") return;
 
+            // Extract attachments from user message if present
+            const attachments = prev.attachments || [];
+
             // If we have a post-reply flow we should save the chat using this special flow
             // so that post save cleanup and other unique properties can be run as opposed to regular chat.
             if (aibitat.hasOwnProperty("_replySpecialAttributes")) {
@@ -46,10 +49,14 @@ const chatHistory = {
           } catch {}
         });
       },
-      _store: async function (aibitat, { prompt, response, attachments = [] } = {}) {
+      _store: async function (
+        aibitat,
+        { prompt, response, attachments = [] } = {}
+      ) {
         const invocation = aibitat.handlerProps.invocation;
         const metrics = aibitat.provider?.getUsage?.() ?? {};
         const citations = aibitat._pendingCitations ?? [];
+        const outputs = aibitat._pendingOutputs ?? [];
         const { chat } = await WorkspaceChats.new({
           workspaceId: Number(invocation.workspace_id),
           prompt: packAgentContentToPlainText(prompt),
@@ -58,7 +65,9 @@ const chatHistory = {
             sources: citations,
             attachments: attachments,
             type: "chat",
+            attachments,
             metrics,
+            ...(outputs.length > 0 ? { outputs } : {}),
           },
           user: { id: invocation?.user_id || null },
           threadId: invocation?.thread_id || null,
@@ -71,6 +80,7 @@ const chatHistory = {
           });
         }
         aibitat.clearCitations?.();
+        aibitat._pendingOutputs = [];
       },
       _storeSpecial: async function (
         aibitat,
@@ -79,6 +89,7 @@ const chatHistory = {
         const invocation = aibitat.handlerProps.invocation;
         const metrics = aibitat.provider?.getUsage?.() ?? {};
         const citations = aibitat._pendingCitations ?? [];
+        const outputs = aibitat._pendingOutputs ?? [];
         const existingSources = options?.sources ?? [];
         const { chat } = await WorkspaceChats.new({
           workspaceId: Number(invocation.workspace_id),
@@ -92,7 +103,9 @@ const chatHistory = {
               : packAgentContentToPlainText(response),
             attachments: attachments,
             type: options?.saveAsType ?? "chat",
+            attachments,
             metrics,
+            ...(outputs.length > 0 ? { outputs } : {}),
           },
           user: { id: invocation?.user_id || null },
           threadId: invocation?.thread_id || null,
@@ -105,6 +118,7 @@ const chatHistory = {
           });
         }
         aibitat.clearCitations?.();
+        aibitat._pendingOutputs = [];
         options?.postSave();
       },
     };

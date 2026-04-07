@@ -385,7 +385,7 @@ function apiWorkspaceThreadEndpoints(app) {
         const { slug, threadSlug } = request.params;
         const {
           message,
-          mode,
+          mode = null,
           userId,
           attachments = [],
           reset = false,
@@ -430,7 +430,7 @@ function apiWorkspaceThreadEndpoints(app) {
         const result = await ApiChatHandler.chatSync({
           workspace,
           message,
-          mode,
+          mode: resolvedMode,
           user,
           thread,
           attachments,
@@ -557,7 +557,7 @@ function apiWorkspaceThreadEndpoints(app) {
         const { slug, threadSlug } = request.params;
         const {
           message,
-          mode,
+          mode = null,
           userId,
           attachments = [],
           reset = false,
@@ -610,7 +610,7 @@ function apiWorkspaceThreadEndpoints(app) {
           response,
           workspace,
           message,
-          mode,
+          mode: resolvedMode,
           user,
           thread,
           attachments,
