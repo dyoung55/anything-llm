@@ -328,12 +328,16 @@ function buildMessages({
         />
       );
     } else {
-      const userPrompt =
-        props.role === "assistant" &&
-        index > 0 &&
-        history[index - 1]?.role === "user"
-          ? history[index - 1].content
-          : "";
+      let userPrompt = "";
+      if (props.role === "assistant") {
+        // Find the previous user message by scanning backwards through history
+        for (let i = index - 1; i >= 0; i--) {
+          if (history[i]?.role === "user") {
+            userPrompt = history[i].content;
+            break;
+          }
+        }
+      }
       acc.push(
         <HistoricalMessage
           key={index}

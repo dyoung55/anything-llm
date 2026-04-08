@@ -82,14 +82,14 @@ export default function SavePromptModal({ prompt, response, onClose }) {
                     Your Prompt
                   </label>
                   <div className="flex flex-col">
-                    <div className="flex justify-end items-center bg-theme-settings-input-bg rounded-t-lg px-2.5 py-1 border-b border-white/10">
+                    <div className="flex justify-end items-center bg-theme-settings-input-bg light:bg-slate-100 rounded-t-lg px-2.5 py-1 border-b border-white/10 light:border-slate-300">
                       <button
                         type="button"
                         onClick={() => setExpandedField("prompt")}
-                        className="text-white/50 hover:text-white transition-colors p-0.5 rounded"
+                        className="text-white/50 light:text-slate-600 hover:text-white light:hover:text-slate-900 transition-colors p-0.5 rounded light:hover:bg-slate-200"
                         title="Expand"
                       >
-                        <ArrowsOut size={14} />
+                        <ArrowsOut size={14} weight="bold" />
                       </button>
                     </div>
                     <textarea
@@ -109,14 +109,14 @@ export default function SavePromptModal({ prompt, response, onClose }) {
                     Example Response
                   </label>
                   <div className="flex flex-col">
-                    <div className="flex justify-end items-center bg-theme-settings-input-bg rounded-t-lg px-2.5 py-1 border-b border-white/10">
+                    <div className="flex justify-end items-center bg-theme-settings-input-bg light:bg-slate-100 rounded-t-lg px-2.5 py-1 border-b border-white/10 light:border-slate-300">
                       <button
                         type="button"
                         onClick={() => setExpandedField("response")}
-                        className="text-white/50 hover:text-white transition-colors p-0.5 rounded"
+                        className="text-white/50 light:text-slate-600 hover:text-white light:hover:text-slate-900 transition-colors p-0.5 rounded light:hover:bg-slate-200"
                         title="Expand"
                       >
-                        <ArrowsOut size={14} />
+                        <ArrowsOut size={14} weight="bold" />
                       </button>
                     </div>
                     <textarea
