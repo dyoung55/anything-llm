@@ -192,7 +192,7 @@ async function aggregateUsageSeries(where) {
       where: { AND: [where, { id: { gt: lastId } }] },
       orderBy: { id: "asc" },
       take: BATCH_SIZE,
-      select: { id: true, createdAt: true, prompt: true, response: true },
+      select: { id: true, createdAt: true, prompt: true, response: true, workspaceId: true },
     });
 
     if (batch.length === 0) break;
@@ -218,6 +218,7 @@ async function aggregateUsageSeries(where) {
           promptTokens: 0,
           completionTokens: 0,
           totalTokens: 0,
+          workspaceBreakdown: {},
         });
       }
       const b = buckets.get(key);
@@ -225,6 +226,21 @@ async function aggregateUsageSeries(where) {
       b.promptTokens += tc.promptTokens;
       b.completionTokens += tc.completionTokens;
       b.totalTokens += tc.totalTokens;
+
+      // Track per-workspace breakdown
+      const wsId = String(row.workspaceId ?? "unknown");
+      if (!b.workspaceBreakdown[wsId]) {
+        b.workspaceBreakdown[wsId] = {
+          chatCount: 0,
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+        };
+      }
+      b.workspaceBreakdown[wsId].chatCount++;
+      b.workspaceBreakdown[wsId].promptTokens += tc.promptTokens;
+      b.workspaceBreakdown[wsId].completionTokens += tc.completionTokens;
+      b.workspaceBreakdown[wsId].totalTokens += tc.totalTokens;
     }
   }
 

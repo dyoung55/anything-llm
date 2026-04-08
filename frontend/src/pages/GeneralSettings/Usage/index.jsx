@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Sidebar from "@/components/SettingsSidebar";
 import { isMobile } from "react-device-detect";
 import * as Skeleton from "react-loading-skeleton";
@@ -14,11 +14,26 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
+// Bold, distinct colors for workspace visualization (50 colors)
+const WORKSPACE_COLORS = [
+  "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
+  "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B88B", "#A9DFBF",
+  "#F1948A", "#D7BDE2", "#76D7C4", "#FAD7A0", "#A3E4D7",
+  "#F5B7B1", "#D5A6BD", "#52BE80", "#F4D03F", "#7FB3D5",
+  "#EC7063", "#9B59B6", "#3498DB", "#E59866", "#52BE80",
+  "#F39C12", "#8E44AD", "#1ABC9C", "#E74C3C", "#34495E",
+  "#16A085", "#D35400", "#2980B9", "#C0392B", "#27AE60",
+  "#2C3E50", "#E67E22", "#8B4513", "#9A8B73", "#00CED1",
+  "#FF69B4", "#6A5ACD", "#20B2AA", "#FFD700", "#DC143C",
+  "#00FA9A", "#FF8C00", "#9932CC", "#32CD32", "#FF1493"
+];
 
 function defaultDateRange() {
   const end = new Date();
@@ -154,13 +169,40 @@ function UsageDashboardInner() {
     showToast(t("usageAnalytics.exportSuccess"), "success");
   };
 
-  const chartData = (series || []).map((s) => ({
-    name: s.periodStart.slice(0, 10),
-    chatCount: s.chatCount,
-    totalTokens: s.totalTokens,
-    promptTokens: s.promptTokens,
-    completionTokens: s.completionTokens,
-  }));
+  const allWorkspaceIds = useMemo(() => {
+    const ids = new Set();
+    (series || []).forEach((s) =>
+      Object.keys(s.workspaceBreakdown || {}).forEach((id) => ids.add(id))
+    );
+    return Array.from(ids);
+  }, [series]);
+
+  // Only show stacked bars if the actual series data has multiple workspaces
+  // This prevents the chart from changing until Apply is clicked
+  const isAllWorkspaces = allWorkspaceIds.length > 1;
+
+  const wsNameMap = useMemo(
+    () => Object.fromEntries(workspaces.map((w) => [String(w.id), w.name])),
+    [workspaces]
+  );
+
+  const chartData = (series || []).map((s) => {
+    const entry = {
+      name: s.periodStart.slice(0, 10),
+      chatCount: s.chatCount,
+      totalTokens: s.totalTokens,
+      promptTokens: s.promptTokens,
+      completionTokens: s.completionTokens,
+    };
+    if (isAllWorkspaces) {
+      for (const wsId of allWorkspaceIds) {
+        const wb = s.workspaceBreakdown?.[wsId];
+        entry[`ws_${wsId}_chats`] = wb?.chatCount ?? 0;
+        entry[`ws_${wsId}_tokens`] = wb?.totalTokens ?? 0;
+      }
+    }
+    return entry;
+  });
 
   const dataKey = chartMetric === "chats" ? "chatCount" : "totalTokens";
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -374,16 +416,44 @@ function UsageDashboardInner() {
                       }}
                       labelStyle={{ color: "var(--theme-text-primary)" }}
                     />
-                    <Bar
-                      dataKey={dataKey}
-                      fill="#6b8afd"
-                      radius={[4, 4, 0, 0]}
-                      name={
-                        chartMetric === "chats"
-                          ? t("usageAnalytics.metricChats")
-                          : t("usageAnalytics.metricTokens")
-                      }
-                    />
+                    {isAllWorkspaces && allWorkspaceIds.length > 0 ? (
+                      <>
+                        {allWorkspaceIds.map((wsId, i) => (
+                          <Bar
+                            key={wsId}
+                            dataKey={`ws_${wsId}_${
+                              chartMetric === "chats" ? "chats" : "tokens"
+                            }`}
+                            stackId="a"
+                            fill={WORKSPACE_COLORS[i % WORKSPACE_COLORS.length]}
+                            name={wsNameMap[wsId] ?? `Workspace ${wsId}`}
+                            radius={
+                              i === allWorkspaceIds.length - 1
+                                ? [4, 4, 0, 0]
+                                : [0, 0, 0, 0]
+                            }
+                          />
+                        ))}
+                        <Legend
+                          wrapperStyle={{ paddingTop: 12, fontSize: 12 }}
+                          contentStyle={{
+                            color: "var(--theme-text-primary)",
+                            fontSize: 12,
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <Bar
+                        dataKey={dataKey}
+                        fill="#6b8afd"
+                        radius={[4, 4, 0, 0]}
+                        name={
+                          chartMetric === "chats"
+                            ? t("usageAnalytics.metricChats")
+                            : t("usageAnalytics.metricTokens")
+                        }
+                      />
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               )}

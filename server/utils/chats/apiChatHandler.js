@@ -820,6 +820,7 @@ async function streamChat({
         temperature: workspace?.openAiTemp ?? LLMConnector.defaultTemp,
         user: user,
       });
+
     completeText = textResponse;
     metrics = performanceMetrics;
     writeResponseChunk(response, {
@@ -836,8 +837,9 @@ async function streamChat({
       temperature: workspace?.openAiTemp ?? LLMConnector.defaultTemp,
       user: user,
     });
-    completeText = await LLMConnector.handleStream(response, stream, { uuid });
-    metrics = stream.metrics;
+    completeText = await LLMConnector.handleStream(response, stream, { uuid, sources });
+    // Use stream metrics, or fallback to provider's getUsage() method
+    metrics = stream.metrics || (typeof LLMConnector.getUsage === 'function' ? LLMConnector.getUsage() : {});
   }
 
   if (completeText?.length > 0) {
@@ -848,8 +850,8 @@ async function streamChat({
         text: completeText,
         sources,
         type: chatMode,
-        metrics,
         attachments,
+        metrics,
       },
       threadId: thread?.id || null,
       apiSessionId: sessionId,

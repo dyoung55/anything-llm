@@ -377,9 +377,11 @@ ${JSON.stringify(def.parameters.properties, null, 4)}\n`;
           messages: this.cleanMsgs(messages),
         });
 
+        let lastChunk = null;
         for await (const chunk of stream) {
           if (!chunk?.choices?.[0]) continue; // Skip if no choices
           const choice = chunk.choices[0];
+          lastChunk = chunk; // Keep track of last chunk for usage extraction
           if (choice.delta?.content) {
             completion.content += choice.delta.content;
             eventHandler?.("reportStreamEvent", {
@@ -388,6 +390,11 @@ ${JSON.stringify(def.parameters.properties, null, 4)}\n`;
               content: choice.delta.content,
             });
           }
+        }
+
+        // Extract usage from the final chunk if available (OpenAI-compatible APIs)
+        if (lastChunk?.usage && typeof this.recordUsage === "function") {
+          this.recordUsage(lastChunk.usage);
         }
       }
 
@@ -456,6 +463,11 @@ ${JSON.stringify(def.parameters.properties, null, 4)}\n`;
           typeof response === "string"
             ? { content: response }
             : response.choices?.[0]?.message;
+
+        // Extract usage from response if available (OpenAI-compatible APIs)
+        if (response?.usage && typeof this.recordUsage === "function") {
+          this.recordUsage(response.usage);
+        }
       }
 
       // The UnTooled class inherited Deduplicator is mostly useful to prevent the agent

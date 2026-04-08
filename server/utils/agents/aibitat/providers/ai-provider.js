@@ -78,6 +78,22 @@ class Provider {
   };
 
   /**
+   * Accumulates usage metrics across all calls in an agent session.
+   * Unlike lastUsage which only tracks the final call, this sums all token counts.
+   * @type {ProviderUsageMetrics}
+   */
+  accumulatedUsage = {
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    total_tokens: 0,
+    duration: 0,
+    outputTps: 0,
+    model: null,
+    provider: null,
+    timestamp: null,
+  };
+
+  /**
    * Timestamp when the current request started (for duration calculation).
    * @type {number}
    */
@@ -509,6 +525,16 @@ class Provider {
       provider: null,
       timestamp: null,
     };
+    this.accumulatedUsage = {
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0,
+      outputTps: 0,
+      duration: 0,
+      model: null,
+      provider: null,
+      timestamp: null,
+    };
   }
 
   /**
@@ -548,14 +574,23 @@ class Provider {
       provider: this.constructor.name,
       timestamp: new Date(),
     };
+
+    // Accumulate usage across all calls in this session
+    this.accumulatedUsage.prompt_tokens += promptTokens;
+    this.accumulatedUsage.completion_tokens += completionTokens;
+    this.accumulatedUsage.total_tokens += promptTokens + completionTokens;
+    this.accumulatedUsage.duration = duration; // Keep latest duration
+    this.accumulatedUsage.model = this.model; // Keep latest model
+    this.accumulatedUsage.provider = this.constructor.name; // Keep latest provider
+    this.accumulatedUsage.timestamp = new Date(); // Keep latest timestamp
   }
 
   /**
-   * Get the usage metrics from the last completion.
-   * @returns {ProviderUsageMetrics} The usage metrics
+   * Get the accumulated usage metrics across all completions in this session.
+   * @returns {ProviderUsageMetrics} The accumulated usage metrics
    */
   getUsage() {
-    return { ...this.lastUsage };
+    return { ...this.accumulatedUsage };
   }
 
   /**

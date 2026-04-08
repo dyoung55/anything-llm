@@ -295,10 +295,19 @@ class AnthropicLLM {
       stream.on("streamEvent", (message) => {
         const data = message;
 
-        if (data.type === "message_start")
-          usage.prompt_tokens = data?.message?.usage?.input_tokens;
-        if (data.type === "message_delta")
-          usage.completion_tokens = data?.usage?.output_tokens;
+        // Capture usage from message_start event
+        if (data.type === "message_start") {
+          usage.prompt_tokens = data?.message?.usage?.input_tokens || 0;
+        }
+
+        // Capture usage from message_delta event
+        if (data.type === "message_delta") {
+          usage.completion_tokens = data?.usage?.output_tokens || 0;
+          // Also capture total_tokens if available
+          if (data?.usage?.output_tokens != null) {
+            usage.output_tokens = data.usage.output_tokens;
+          }
+        }
 
         if (
           data.type === "content_block_delta" &&
@@ -321,6 +330,11 @@ class AnthropicLLM {
           message.type === "message_stop" ||
           (data.stop_reason && data.stop_reason === "end_turn")
         ) {
+          // If we got usage data from message events, ensure total_tokens is set
+          if (usage.prompt_tokens != null && usage.completion_tokens != null) {
+            usage.total_tokens = usage.prompt_tokens + usage.completion_tokens;
+          }
+
           writeResponseChunk(response, {
             uuid,
             sources,
