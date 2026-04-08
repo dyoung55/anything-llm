@@ -51,6 +51,11 @@ class MCPHypervisor {
    * @type { { [key: string]: {status: 'success' | 'failed', message: string} } }
    */
   mcpLoadingResults = {};
+  /**
+   * Track which servers are currently being retried to avoid duplicate retry attempts
+   * @type {Set<string>}
+   */
+  #retryingServers = new Set();
 
   constructor() {
     if (MCPHypervisor._instance) return MCPHypervisor._instance;
@@ -58,6 +63,7 @@ class MCPHypervisor {
     this.className = "MCPHypervisor";
     this.log("Initializing MCP Hypervisor - subsequent calls will boot faster");
     this.#setupConfigFile();
+    this.#startBackgroundHealthCheck();
     return this;
   }
 
@@ -197,6 +203,7 @@ class MCPHypervisor {
    */
   async reloadMCPServers() {
     this.pruneMCPServers();
+    this.mcpLoadingResults = {}; // Clear previous results
     await this.bootMCPServers();
   }
 
@@ -496,13 +503,21 @@ class MCPHypervisor {
    * @returns { Promise<{ [key: string]: {status: string, message: string} }> } The results of the boot process.
    */
   async bootMCPServers() {
-    if (Object.keys(this.mcps).length > 0) {
-      this.log("MCP Servers already running, skipping boot.");
+    const serverDefinitions = this.mcpServerConfigs;
+    const alreadyRunning = Object.keys(this.mcps);
+
+    // If all servers are already running, skip boot
+    if (alreadyRunning.length === serverDefinitions.length &&
+        serverDefinitions.every(def => alreadyRunning.includes(def.name))) {
+      this.log("All MCP servers already running, skipping boot.");
       return this.mcpLoadingResults;
     }
 
-    const serverDefinitions = this.mcpServerConfigs;
     for (const { name, server } of serverDefinitions) {
+      // Skip if already running
+      if (alreadyRunning.includes(name)) {
+        continue;
+      }
       if (
         server.anythingllm?.hasOwnProperty("autoStart") &&
         server.anythingllm.autoStart === false
@@ -552,6 +567,120 @@ class MCPHypervisor {
       runningServers
     );
     return this.mcpLoadingResults;
+  }
+
+  /**
+   * Start a background health check that periodically retries offline servers
+   * without blocking other operations. Runs every 60 seconds.
+   * @private
+   */
+  #startBackgroundHealthCheck() {
+    // Only start once per instance
+    if (this._healthCheckInterval) return;
+
+    this._healthCheckInterval = setInterval(async () => {
+      try {
+        await this.#retryOfflineServersInBackground();
+      } catch (error) {
+        this.log("Error in background health check:", error.message);
+      }
+    }, 60000); // Check every 60 seconds
+
+    // Unref the interval so it doesn't keep the process alive
+    if (this._healthCheckInterval.unref) {
+      this._healthCheckInterval.unref();
+    }
+  }
+
+  /**
+   * Attempt to reconnect to offline servers in the background without blocking.
+   * Only one retry per server at a time to avoid duplicate attempts.
+   * @private
+   */
+  async #retryOfflineServersInBackground() {
+    const serverDefinitions = this.mcpServerConfigs;
+
+    for (const { name, server } of serverDefinitions) {
+      // Skip servers that are already running
+      if (this.mcps[name]) continue;
+
+      // Skip servers with autoStart disabled
+      if (
+        server.anythingllm?.hasOwnProperty("autoStart") &&
+        server.anythingllm.autoStart === false
+      ) {
+        continue;
+      }
+
+      // Skip if already retrying this server
+      if (this.#retryingServers.has(name)) continue;
+
+      // Mark as retrying
+      this.#retryingServers.add(name);
+
+      // Attempt to reconnect in the background (fire and forget)
+      this.#attemptBackgroundReconnect(name, server).finally(() => {
+        this.#retryingServers.delete(name);
+      });
+    }
+  }
+
+  /**
+   * Attempt to reconnect a single offline server in the background.
+   * Uses a shorter timeout than the initial boot (10 seconds instead of 30).
+   * @private
+   */
+  async #attemptBackgroundReconnect(name, server) {
+    try {
+      this.log(`[Background Health Check] Retrying MCP server: ${name}`);
+      const mcp = new (require("@modelcontextprotocol/sdk/client/index.js"))
+        .Client({ name: name, version: "1.0.0" });
+      const transport = await this.#setupServerTransport(server, this.#getServerType(server));
+
+      // Set up event handlers
+      transport.onclose = () => this.log(`${name} - Transport closed`);
+      transport.onerror = (error) =>
+        this.log(`${name} - Transport error:`, error);
+
+      // Connect with a shorter timeout for background retries
+      const connectionPromise = mcp.connect(transport);
+      let timeoutId;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error("Connection timeout")),
+          10_000
+        ); // 10 second timeout for background retries
+      });
+
+      try {
+        await Promise.race([connectionPromise, timeoutPromise]);
+        if (timeoutId) clearTimeout(timeoutId);
+
+        // Success - add to active servers
+        this.mcps[name] = mcp;
+        this.mcpLoadingResults[name] = {
+          status: "success",
+          message: `Successfully reconnected to MCP server: ${name}`,
+        };
+        this.log(`[Background Health Check] Successfully reconnected: ${name}`);
+      } catch (error) {
+        if (timeoutId) clearTimeout(timeoutId);
+        throw error;
+      }
+    } catch (error) {
+      // Log the failure but don't update mcpLoadingResults on background retries
+      // (keep the original error message for the user to see)
+      this.log(`[Background Health Check] Failed to reconnect ${name}:`, error.message);
+    }
+  }
+
+  /**
+   * Get the server type from the server definition
+   * @private
+   */
+  #getServerType(server) {
+    if (server.type === "stdio" || server.command) return "stdio";
+    return server.type || "sse";
   }
 }
 

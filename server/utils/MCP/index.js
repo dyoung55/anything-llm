@@ -42,6 +42,18 @@ class MCPCompatibilityLayer extends MCPHypervisor {
   }
 
   /**
+   * Get merged MCP server configs for a workspace (global configs filtered to workspace-enabled ones)
+   * @param {string} workspaceSlug - The workspace slug
+   * @returns {Array<{name: string, server: Object, source: 'workspace'}>} - Filtered server configs with workspace source
+   */
+  getMergedMCPServers(workspaceSlug) {
+    const enabledServers = WorkspaceAgentConfig.getEnabledMcpServers(workspaceSlug);
+    return this.mcpServerConfigs
+      .filter(s => enabledServers.includes(s.name))
+      .map(s => ({ ...s, source: 'workspace' }));
+  }
+
+  /**
    * Convert an MCP server name to an AnythingLLM Agent plugin
    * @param {string} name - The base name of the MCP server to convert - not the tool name. eg: `docker-mcp` not `docker-mcp:list-containers`
    * @param {Object} aibitat - The aibitat object to pass to the plugin
@@ -100,11 +112,77 @@ class MCPCompatibilityLayer extends MCPHypervisor {
                 handler: async function (args = {}) {
                   try {
                     const mcpLayer = new MCPCompatibilityLayer();
-                    const currentMcp = mcpLayer.mcps[name];
-                    if (!currentMcp)
-                      throw new Error(
-                        `MCP server ${name} is not currently running`
+                    let currentMcp = mcpLayer.mcps[name];
+
+                    if (!currentMcp) {
+                      // Server not in mcps - try to reconnect it
+                      aibitat.handlerProps.log(
+                        `MCP server ${name} not running, attempting to reconnect...`
                       );
+                      aibitat.introspect(
+                        `MCP server ${name} is offline, attempting to reconnect...`
+                      );
+
+                      try {
+                        // Attempt reconnection with a timeout
+                        const reconnectPromise = mcpLayer.startMCPServer(name);
+                        const timeoutPromise = new Promise((_, reject) =>
+                          setTimeout(
+                            () =>
+                              reject(new Error("Reconnection attempt timeout")),
+                            15000
+                          )
+                        );
+                        const result = await Promise.race([
+                          reconnectPromise,
+                          timeoutPromise,
+                        ]);
+
+                        if (!result.success) {
+                          throw new Error(
+                            result.error || "Failed to reconnect to MCP server"
+                          );
+                        }
+
+                        currentMcp = mcpLayer.mcps[name];
+                        if (!currentMcp) {
+                          throw new Error(
+                            `Server ${name} reported success but is not in mcps`
+                          );
+                        }
+
+                        aibitat.handlerProps.log(
+                          `Successfully reconnected to MCP server ${name}`
+                        );
+                        aibitat.introspect(
+                          `Successfully reconnected to MCP server ${name}`
+                        );
+                      } catch (reconnectError) {
+                        throw new Error(
+                          `MCP server ${name} is offline and could not be reconnected: ${reconnectError.message}`
+                        );
+                      }
+                    }
+
+                    // Verify server is still alive before executing
+                    try {
+                      const serverAlive = await Promise.race([
+                        currentMcp.ping(),
+                        new Promise((_, reject) =>
+                          setTimeout(
+                            () => reject(new Error("Ping timeout")),
+                            3000
+                          )
+                        ),
+                      ]);
+                      if (!serverAlive) {
+                        throw new Error("Server ping returned false");
+                      }
+                    } catch (pingError) {
+                      throw new Error(
+                        `MCP server ${name} is not responding: ${pingError.message}`
+                      );
+                    }
 
                     aibitat.handlerProps.log(
                       `Executing MCP server: ${name}:${tool.name} with args:`,
@@ -151,6 +229,7 @@ class MCPCompatibilityLayer extends MCPHypervisor {
   /**
    * Returns the MCP servers that were loaded or attempted to be loaded
    * so that we can display them in the frontend for review or error logging.
+   * Does NOT attempt to re-connect to offline servers - only returns current state.
    * @param {string|null} workspaceSlug - Optional workspace slug for workspace-specific servers
    * @returns {Promise<{
    *   name: string,
@@ -162,62 +241,110 @@ class MCPCompatibilityLayer extends MCPHypervisor {
    * }[]>} - The active MCP servers
    */
   async servers(workspaceSlug = null) {
-    await this.bootMCPServers();
+    // Do NOT call bootMCPServers() here - just return current state
+    // bootMCPServers() is only called at startup or on explicit reload
     const servers = [];
-    
-    // Get merged servers if workspace slug provided
-    const serverConfigs = workspaceSlug 
-      ? this.getMergedMCPServers(workspaceSlug)
-      : this.mcpServerConfigs.map(s => ({ ...s, source: 'global' }));
 
-    for (const serverConfig of serverConfigs) {
-      const name = serverConfig.name;
-      const result = this.mcpLoadingResults[name];
+    try {
+      // Get merged servers if workspace slug provided
+      const serverConfigs = workspaceSlug
+        ? this.getMergedMCPServers(workspaceSlug)
+        : this.mcpServerConfigs.map(s => ({ ...s, source: 'global' }));
 
-      if (result && result.status === "failed") {
-        servers.push({
-          name,
-          config: serverConfig.server || null,
-          running: false,
-          tools: [],
-          error: result.message,
-          process: null,
-          source: serverConfig.source || 'global',
-        });
-        continue;
+      for (const serverConfig of serverConfigs) {
+        try {
+          const name = serverConfig.name;
+          const result = this.mcpLoadingResults[name];
+
+          if (result && result.status === "failed") {
+            servers.push({
+              name,
+              config: serverConfig.server || null,
+              running: false,
+              tools: [],
+              error: result.message,
+              process: null,
+              source: serverConfig.source || 'global',
+            });
+            continue;
+          }
+
+          const mcp = this.mcps[name];
+          if (!mcp) {
+            // Server not running - might be workspace-specific and not started
+            servers.push({
+              name,
+              config: serverConfig.server || null,
+              running: false,
+              tools: [],
+              error: null,
+              process: null,
+              source: serverConfig.source || 'global',
+            });
+            continue;
+          }
+
+          // Check if server is still alive with a timeout
+          let online = false;
+          let tools = [];
+          try {
+            const pingPromise = mcp.ping();
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("Ping timeout")), 2000)
+            );
+            online = !!(await Promise.race([pingPromise, timeoutPromise]));
+
+            if (online) {
+              try {
+                const toolsPromise = mcp.listTools();
+                const toolsTimeoutPromise = new Promise((_, reject) =>
+                  setTimeout(() => reject(new Error("List tools timeout")), 2000)
+                );
+                const toolsResult = await Promise.race([toolsPromise, toolsTimeoutPromise]);
+                tools = (toolsResult.tools || []).filter(
+                  (tool) => !tool.name.startsWith("handle_mcp_connection_mcp_")
+                );
+              } catch (toolError) {
+                // If tool listing times out or fails, just continue without tools
+                this.log(`Failed to list tools for ${name}: ${toolError.message}`);
+                tools = [];
+              }
+            }
+          } catch (pingError) {
+            // If ping fails, mark as offline
+            online = false;
+          }
+
+          servers.push({
+            name,
+            config: serverConfig.server || null,
+            running: online,
+            tools,
+            error: null,
+            process: {
+              pid: mcp.transport?.process?.pid || null,
+            },
+            source: serverConfig.source || 'global',
+          });
+        } catch (serverError) {
+          // If processing a single server fails, log it and continue with others
+          this.log(`Error processing server config: ${serverError.message}`);
+          servers.push({
+            name: serverConfig.name,
+            config: serverConfig.server || null,
+            running: false,
+            tools: [],
+            error: `Error checking server status: ${serverError.message}`,
+            process: null,
+            source: serverConfig.source || 'global',
+          });
+        }
       }
-
-      const mcp = this.mcps[name];
-      if (!mcp) {
-        // Server not running - might be workspace-specific and not started
-        servers.push({
-          name,
-          config: serverConfig.server || null,
-          running: false,
-          tools: [],
-          error: null,
-          process: null,
-          source: serverConfig.source || 'global',
-        });
-        continue;
-      }
-
-      const online = !!(await mcp.ping());
-      const tools = (online ? (await mcp.listTools()).tools : []).filter(
-        (tool) => !tool.name.startsWith("handle_mcp_connection_mcp_")
-      );
-      servers.push({
-        name,
-        config: serverConfig.server || null,
-        running: online,
-        tools,
-        error: null,
-        process: {
-          pid: mcp.transport?.process?.pid || null,
-        },
-        source: serverConfig.source || 'global',
-      });
+    } catch (error) {
+      // If getting server configs fails, log it and return what we have
+      this.log(`Error in servers() method: ${error.message}`);
     }
+
     return servers;
   }
 

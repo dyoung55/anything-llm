@@ -16,6 +16,7 @@ const {
   agentSkillsFromSystemSettings,
 } = require("./defaults");
 const { AgentHandler } = require(".");
+const WorkspaceAgentConfig = require("./workspaceAgentConfig");
 const {
   WorkspaceAgentInvocation,
 } = require("../../models/workspaceAgentInvocation");
@@ -358,11 +359,19 @@ class EphemeralAgentHandler extends AgentHandler {
       await WORKSPACE_AGENT.getDefinition(this.provider, this.#workspace, user)
     );
 
+    // Respect workspace MCP server permissions when workspace override is enabled
+    const useWorkspaceOverride = this.#workspace?.overrideGlobalAgentSettings === true;
+    const mcpServers = useWorkspaceOverride
+      ? await new MCPCompatibilityLayer().activeMCPServers(this.#workspace.slug)
+      : await new MCPCompatibilityLayer().activeMCPServers();
+
     this.#funcsToLoad = [
-      ...(await agentSkillsFromSystemSettings()),
+      ...(useWorkspaceOverride
+        ? await WorkspaceAgentConfig.getEnabledSkills(this.#workspace.slug)
+        : await agentSkillsFromSystemSettings()),
       ...ImportedPlugin.activeImportedPlugins(),
       ...AgentFlows.activeFlowPlugins(),
-      ...(await new MCPCompatibilityLayer().activeMCPServers()),
+      ...mcpServers,
     ];
   }
 
