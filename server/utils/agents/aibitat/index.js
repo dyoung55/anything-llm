@@ -851,13 +851,33 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
           `Maximum tool call limit (${this.maxToolCalls}) reached. Generating a final response from what I have so far.`
         );
 
+        // The provider pushed a tool_use block to messages that we won't execute.
+        // Remove the entire assistant message so the conversation ends with a user
+        // message — Anthropic rejects both unmatched tool_use and assistant-prefill.
+        const cleanMessages = [...messages];
+        const lastMsg = cleanMessages[cleanMessages.length - 1];
+        if (
+          lastMsg?.role === "assistant" &&
+          Array.isArray(lastMsg.content) &&
+          lastMsg.content.some((item) => item.type === "tool_use")
+        ) {
+          cleanMessages.pop();
+        }
+        // Ensure the conversation ends with an explicit user request so the model
+        // doesn't hang waiting for more tool context when there are no tools.
+        cleanMessages.push({
+          role: "user",
+          content:
+            "You have reached the maximum number of tool calls. Please summarize the results you have gathered so far and provide a final response.",
+        });
+
         const finalStream = await this.#safeProviderCall(() =>
-          provider.stream(messages, [], eventHandler)
+          provider.stream(cleanMessages, [], eventHandler)
         );
         const finalResponse =
           finalStream?.textResponse ||
           "I reached the maximum number of tool calls allowed for a single response. Here is what I have so far based on the tools I was able to run.";
-        this._lastAssistantStreamUuid = finalUuid;
+        this._lastAssistantStreamUuid = finalStream?.uuid;
         return finalResponse;
       }
 
@@ -1011,8 +1031,28 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
           `Maximum tool call limit (${this.maxToolCalls}) reached. Generating a final response from what I have so far.`
         );
 
+        // The provider pushed a tool_use block to messages that we won't execute.
+        // Remove the entire assistant message so the conversation ends with a user
+        // message — Anthropic rejects both unmatched tool_use and assistant-prefill.
+        const cleanMessages = [...messages];
+        const lastMsg = cleanMessages[cleanMessages.length - 1];
+        if (
+          lastMsg?.role === "assistant" &&
+          Array.isArray(lastMsg.content) &&
+          lastMsg.content.some((item) => item.type === "tool_use")
+        ) {
+          cleanMessages.pop();
+        }
+        // Ensure the conversation ends with an explicit user request so the model
+        // doesn't hang waiting for more tool context when there are no tools.
+        cleanMessages.push({
+          role: "user",
+          content:
+            "You have reached the maximum number of tool calls. Please summarize the results you have gathered so far and provide a final response.",
+        });
+
         const finalCompletion = await this.#safeProviderCall(() =>
-          provider.complete(messages, [])
+          provider.complete(cleanMessages, [])
         );
         eventHandler?.("reportStreamEvent", {
           type: "usageMetrics",

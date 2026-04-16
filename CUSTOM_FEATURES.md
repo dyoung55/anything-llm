@@ -126,7 +126,20 @@ Hard-coded maximum tokens for different Claude models (supports newer models wit
 
 ---
 
-### 7. **MCP Server Configuration Per-Workspace**
+### 7. **Fix: Anthropic Agent Tool Call Limit 400 Error**
+When an agent hits its `maxToolCalls` limit, both `provider.stream()` and `provider.complete()` had already pushed a `tool_use` block to the messages array. The final no-tools API call sent that dangling `tool_use` without a matching `tool_result`, causing Anthropic to return a 400 error.
+
+**Fix (two layers):**
+1. `index.js` — when `depth >= maxToolCalls`, strip the trailing `tool_use` from `messages` before the final provider call (primary, explicit fix)
+2. `anthropic.js` `#prepareMessages()` — strip any trailing unmatched `tool_use` from the last assistant message before every API call (defensive fallback)
+
+**Files to Check:**
+- `server/utils/agents/aibitat/index.js` — `handleAsyncExecution` and `handleExecution` limit-hit blocks
+- `server/utils/agents/aibitat/providers/anthropic.js` — `#prepareMessages()` trailing guard
+
+---
+
+### 8. **MCP Server Configuration Per-Workspace**
 MCP servers can be enabled/disabled per workspace, and specific tools can be suppressed.
 
 **Files:**
@@ -144,7 +157,7 @@ POST   /mcp-servers/toggle-tool
 
 ---
 
-### 8. **Analytics Integration**
+### 9. **Analytics Integration**
 Google Analytics tracking for application usage.
 
 **Files:**
@@ -154,7 +167,7 @@ Google Analytics tracking for application usage.
 
 ---
 
-### 9. **Usage Screen**
+### 10. **Usage Screen**
 Admin dashboard showing system usage statistics and metrics.
 
 **Files:**
@@ -235,6 +248,7 @@ After merging upstream:
 - [ ] MCP servers can be toggled per workspace
 - [ ] New agent skills (filesystem-agent, create-files-agent) appear in workspace config
 - [ ] Anthropic models use correct max token limits
+- [ ] When agent tool call limit is hit, agent returns graceful summary instead of 400 error
 - [ ] Analytics tracking works (if enabled)
 - [ ] Build completes without errors: `npm run build`
 

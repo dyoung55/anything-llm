@@ -242,6 +242,21 @@ class AnthropicProvider extends Provider {
       []
     );
 
+    // Remove any trailing assistant message that contains an unmatched tool_use.
+    // Anthropic rejects both unmatched tool_use (no following tool_result) and
+    // conversations ending with an assistant message (prefill). Popping the whole
+    // message leaves the conversation ending with a user message, which is valid.
+    if (processedMessages.length > 0) {
+      const lastMsg = processedMessages[processedMessages.length - 1];
+      if (
+        lastMsg.role === "assistant" &&
+        Array.isArray(lastMsg.content) &&
+        lastMsg.content.some((item) => item.type === "tool_use")
+      ) {
+        processedMessages.pop();
+      }
+    }
+
     // The first message must be from the user.
     if (processedMessages.length > 0 && processedMessages[0].role !== "user") {
       processedMessages.shift();

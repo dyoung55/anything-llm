@@ -19,6 +19,10 @@ storage/plugins/office-extensions/*
 storage/plugins/anythingllm_mcp_servers.json
 !storage/documents/DOCUMENTS.md
 storage/push-notifications/*
+storage/models/context-windows/*
+storage/models/tesseract/*
+storage/plugins/workspace-agent-config/*
+storage/plugins/.workspace-agent-config-migrated
 storage/direct-uploads
 logs/server.log
 *.db
