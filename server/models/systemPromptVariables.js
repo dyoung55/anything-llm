@@ -85,6 +85,82 @@ const SystemPromptVariables = {
       multiUserRequired: true,
     },
     {
+      key: "user.fullName",
+      value: async (userId = null) => {
+        if (!userId) return "[User full name]";
+        try {
+          const user = await prisma.users.findUnique({
+            where: { id: Number(userId) },
+            select: { fullName: true },
+          });
+          return user?.fullName || "[Full name not set]";
+        } catch (error) {
+          console.error("Error fetching user fullName:", error);
+          return "[Full name not set]";
+        }
+      },
+      description: "Current user's full name",
+      type: "user",
+      multiUserRequired: true,
+    },
+    {
+      key: "user.email",
+      value: async (userId = null) => {
+        if (!userId) return "[User email]";
+        try {
+          const user = await prisma.users.findUnique({
+            where: { id: Number(userId) },
+            select: { email: true },
+          });
+          return user?.email || "[Email not set]";
+        } catch (error) {
+          console.error("Error fetching user email:", error);
+          return "[Email not set]";
+        }
+      },
+      description: "Current user's email address",
+      type: "user",
+      multiUserRequired: true,
+    },
+    {
+      key: "user.language",
+      value: async (userId = null) => {
+        if (!userId) return "[User language]";
+        try {
+          const user = await prisma.users.findUnique({
+            where: { id: Number(userId) },
+            select: { language: true },
+          });
+          return user?.language || "[Language not set]";
+        } catch (error) {
+          console.error("Error fetching user language:", error);
+          return "[Language not set]";
+        }
+      },
+      description: "Current user's preferred language (BCP 47 tag)",
+      type: "user",
+      multiUserRequired: true,
+    },
+    {
+      key: "user.timezone",
+      value: async (userId = null) => {
+        if (!userId) return "[User timezone]";
+        try {
+          const user = await prisma.users.findUnique({
+            where: { id: Number(userId) },
+            select: { timezone: true },
+          });
+          return user?.timezone || "[Timezone not set]";
+        } catch (error) {
+          console.error("Error fetching user timezone:", error);
+          return "[Timezone not set]";
+        }
+      },
+      description: "Current user's timezone (IANA identifier)",
+      type: "user",
+      multiUserRequired: true,
+    },
+    {
       key: "workspace.id",
       value: (workspaceId = null) => {
         if (!workspaceId) return "[Workspace ID]";

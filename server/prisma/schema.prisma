@@ -69,6 +69,10 @@ model users {
   lastUpdatedAt                DateTime                      @default(now())
   dailyMessageLimit            Int?
   bio                          String?                       @default("")
+  fullName                     String?
+  email                        String?
+  language                     String?
+  timezone                     String?
   web_push_subscription_config String?
   workspace_chats              workspace_chats[]
   workspace_users              workspace_users[]

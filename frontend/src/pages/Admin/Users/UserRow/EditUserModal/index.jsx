@@ -9,6 +9,8 @@ import {
   USERNAME_MAX_LENGTH,
   USERNAME_PATTERN,
 } from "@/utils/username";
+import { useLanguageOptions } from "@/hooks/useLanguageOptions";
+import TimezoneSelector from "@/components/TimezoneSelector";
 
 export default function EditUserModal({ currentUser, user, closeModal }) {
   const [role, setRole] = useState(user.role);
@@ -18,6 +20,7 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
     limit: user.dailyMessageLimit || 10,
   });
   const { t } = useTranslation();
+  const { supportedLanguages, getLanguageName } = useLanguageOptions();
 
   const handleUpdate = async (e) => {
     setError(null);
@@ -41,6 +44,10 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
         currentUser.username = data.username;
         currentUser.bio = data.bio;
         currentUser.role = data.role;
+        currentUser.fullName = data.fullName;
+        currentUser.email = data.email;
+        currentUser.language = data.language;
+        currentUser.timezone = data.timezone;
         localStorage.setItem(AUTH_USER, JSON.stringify(currentUser));
       }
 
@@ -66,7 +73,7 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
             <X size={24} weight="bold" className="text-white" />
           </button>
         </div>
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
           <form onSubmit={handleUpdate}>
             <div className="space-y-4">
               <div>
@@ -91,6 +98,66 @@ export default function EditUserModal({ currentUser, user, closeModal }) {
                 <p className="mt-2 text-xs text-white/60">
                   {t("common.username_requirements")}
                 </p>
+              </div>
+              <div>
+                <label
+                  htmlFor="fullName"
+                  className="block mb-2 text-sm font-medium text-white"
+                >
+                  Full Name
+                </label>
+                <input
+                  name="fullName"
+                  type="text"
+                  className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
+                  placeholder="User's full name"
+                  defaultValue={user.fullName || ""}
+                  autoComplete="off"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block mb-2 text-sm font-medium text-white"
+                >
+                  Email
+                </label>
+                <input
+                  name="email"
+                  type="email"
+                  className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
+                  placeholder="user@example.com"
+                  defaultValue={user.email || ""}
+                  autoComplete="off"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="language"
+                  className="block mb-2 text-sm font-medium text-white"
+                >
+                  Language
+                </label>
+                <select
+                  name="language"
+                  defaultValue={user.language || "en"}
+                  className="border-none bg-theme-settings-input-bg w-full text-white text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block p-2.5"
+                >
+                  {supportedLanguages.map((lang) => (
+                    <option key={lang} value={lang}>
+                      {getLanguageName(lang)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="timezone"
+                  className="block mb-2 text-sm font-medium text-white"
+                >
+                  Timezone
+                </label>
+                <TimezoneSelector name="timezone" defaultValue={user.timezone} />
               </div>
               <div>
                 <label

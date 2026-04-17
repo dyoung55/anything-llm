@@ -24,6 +24,10 @@ const User = {
     "suspended",
     "dailyMessageLimit",
     "bio",
+    "fullName",
+    "email",
+    "language",
+    "timezone",
   ],
   validations: {
     /**
@@ -73,6 +77,38 @@ const User = {
         throw new Error("Bio cannot be longer than 1,000 characters");
       return String(bio);
     },
+    fullName: (v = null) => {
+      if (!v) return null;
+      const s = String(v);
+      if (s.length > 128)
+        throw new Error("Full name cannot exceed 128 characters");
+      return s;
+    },
+    email: (v = null) => {
+      if (!v) return null;
+      const s = String(v);
+      if (s.length > 254)
+        throw new Error("Email cannot exceed 254 characters");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
+        throw new Error("Invalid email format");
+      return s;
+    },
+    language: (v = null) => {
+      if (!v) return null;
+      const s = String(v);
+      if (s.length > 35) throw new Error("Language tag too long");
+      return s;
+    },
+    timezone: (v = null) => {
+      if (!v) return null;
+      const s = String(v);
+      try {
+        Intl.DateTimeFormat(undefined, { timeZone: s });
+      } catch (_e) {
+        throw new Error("Invalid IANA timezone identifier");
+      }
+      return s;
+    },
   },
   // validations for the above writable fields.
   castColumnValue: function (key, value) {
@@ -81,6 +117,11 @@ const User = {
         return Number(Boolean(value));
       case "dailyMessageLimit":
         return value === null ? null : Number(value);
+      case "fullName":
+      case "email":
+      case "language":
+      case "timezone":
+        return value === null || value === undefined ? null : String(value);
       default:
         return String(value);
     }
@@ -111,6 +152,10 @@ const User = {
     role = "default",
     dailyMessageLimit = null,
     bio = "",
+    fullName = null,
+    email = null,
+    language = null,
+    timezone = null,
   }) {
     const passwordCheck = this.checkPasswordComplexity(password);
     if (!passwordCheck.checkedOK) {
@@ -131,6 +176,10 @@ const User = {
           bio: this.validations.bio(bio),
           dailyMessageLimit:
             this.validations.dailyMessageLimit(dailyMessageLimit),
+          fullName: this.validations.fullName(fullName),
+          email: this.validations.email(email),
+          language: this.validations.language(language),
+          timezone: this.validations.timezone(timezone),
         },
       });
       return { user: this.filterFields(user), error: null };

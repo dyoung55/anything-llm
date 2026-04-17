@@ -12,15 +12,12 @@ import { useState, useEffect } from "react";
 import { Tooltip } from "react-tooltip";
 import { safeJsonParse } from "@/utils/request";
 import Toggle from "@/components/lib/Toggle";
-import {
-  USERNAME_MIN_LENGTH,
-  USERNAME_MAX_LENGTH,
-  USERNAME_PATTERN,
-} from "@/utils/username";
+import TimezoneSelector from "@/components/TimezoneSelector";
 
 export default function AccountModal({ user, hideModal }) {
   const { pfp, setPfp } = usePfp();
   const { t } = useTranslation();
+  const { changeLanguage } = useLanguageOptions();
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -63,10 +60,12 @@ export default function AccountModal({ user, hideModal }) {
     if (success) {
       let storedUser = safeJsonParse(localStorage.getItem(AUTH_USER), null);
       if (storedUser) {
-        storedUser.username = data.username;
         storedUser.bio = data.bio;
+        storedUser.language = data.language;
+        storedUser.timezone = data.timezone;
         localStorage.setItem(AUTH_USER, JSON.stringify(storedUser));
       }
+      if (data.language) changeLanguage(data.language);
       showToast(t("profile_settings.profile_updated"), "success", {
         clear: true,
       });
@@ -145,20 +144,35 @@ export default function AccountModal({ user, hideModal }) {
                   {t("profile_settings.username")}
                 </label>
                 <input
-                  name="username"
                   type="text"
-                  className="border-none bg-theme-settings-input-bg placeholder:text-theme-settings-input-placeholder border-gray-500 text-white text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
-                  placeholder="User's username"
-                  minLength={USERNAME_MIN_LENGTH}
-                  maxLength={USERNAME_MAX_LENGTH}
-                  pattern={USERNAME_PATTERN}
-                  defaultValue={user.username}
-                  required
-                  autoComplete="off"
+                  disabled
+                  value={user.username}
+                  className="border-none bg-theme-settings-input-bg placeholder:text-theme-settings-input-placeholder border-gray-500 text-white text-sm rounded-lg outline-none block w-full p-2.5 cursor-not-allowed opacity-60"
                 />
-                <p className="mt-2 text-xs text-white/60">
-                  {t("common.username_requirements")}
-                </p>
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-medium text-theme-text-primary">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value={user.fullName || ""}
+                  className="border-none bg-theme-settings-input-bg placeholder:text-theme-settings-input-placeholder border-gray-500 text-white text-sm rounded-lg outline-none block w-full p-2.5 cursor-not-allowed opacity-60"
+                />
+                <p className="mt-1 text-xs text-white/40">Set by an administrator</p>
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-medium text-theme-text-primary">
+                  Email
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value={user.email || ""}
+                  className="border-none bg-theme-settings-input-bg placeholder:text-theme-settings-input-placeholder border-gray-500 text-white text-sm rounded-lg outline-none block w-full p-2.5 cursor-not-allowed opacity-60"
+                />
+                <p className="mt-1 text-xs text-white/40">Set by an administrator</p>
               </div>
               <div>
                 <label
@@ -192,10 +206,16 @@ export default function AccountModal({ user, hideModal }) {
                   defaultValue={user.bio}
                 />
               </div>
+              <div>
+                <label className="block mb-2 text-sm font-medium text-white">
+                  Timezone
+                </label>
+                <TimezoneSelector name="timezone" defaultValue={user.timezone} />
+              </div>
               <div className="flex gap-x-16">
                 <div className="flex flex-col gap-y-6">
                   <ThemePreference />
-                  <LanguagePreference />
+                  <LanguagePreference user={user} />
                 </div>
                 <div className="flex flex-col gap-y-6">
                   <AutoSubmitPreference />
@@ -225,7 +245,7 @@ export default function AccountModal({ user, hideModal }) {
   );
 }
 
-function LanguagePreference() {
+function LanguagePreference({ user }) {
   const {
     currentLanguage,
     supportedLanguages,
@@ -236,15 +256,15 @@ function LanguagePreference() {
   return (
     <div>
       <label
-        htmlFor="userLang"
+        htmlFor="language"
         className="block mb-2 text-sm font-medium text-white"
       >
         {t("profile_settings.language")}
       </label>
       <select
-        name="userLang"
+        name="language"
         className="border-none bg-theme-settings-input-bg w-fit mt-2 px-4 focus:outline-primary-button active:outline-primary-button outline-none text-white text-sm rounded-lg block py-2"
-        defaultValue={currentLanguage || "en"}
+        defaultValue={user?.language || currentLanguage || "en"}
         onChange={(e) => changeLanguage(e.target.value)}
       >
         {supportedLanguages.map((lang) => {

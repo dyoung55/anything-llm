@@ -9,6 +9,8 @@ import {
   USERNAME_MAX_LENGTH,
   USERNAME_PATTERN,
 } from "@/utils/username";
+import { useLanguageOptions } from "@/hooks/useLanguageOptions";
+import TimezoneSelector from "@/components/TimezoneSelector";
 
 export default function NewUserModal({ closeModal }) {
   const [error, setError] = useState(null);
@@ -18,6 +20,7 @@ export default function NewUserModal({ closeModal }) {
     limit: 10,
   });
   const { t } = useTranslation();
+  const { supportedLanguages, getLanguageName } = useLanguageOptions();
 
   const handleCreate = async (e) => {
     setError(null);
@@ -110,6 +113,64 @@ export default function NewUserModal({ closeModal }) {
                   autoComplete="off"
                   rows={3}
                 />
+              </div>
+              <div>
+                <label
+                  htmlFor="fullName"
+                  className="block mb-2 text-sm font-medium text-white"
+                >
+                  Full Name
+                </label>
+                <input
+                  name="fullName"
+                  type="text"
+                  className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
+                  placeholder="User's full name"
+                  autoComplete="off"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block mb-2 text-sm font-medium text-white"
+                >
+                  Email
+                </label>
+                <input
+                  name="email"
+                  type="email"
+                  className="border-none bg-theme-settings-input-bg w-full text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block w-full p-2.5"
+                  placeholder="user@example.com"
+                  autoComplete="off"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="language"
+                  className="block mb-2 text-sm font-medium text-white"
+                >
+                  Language
+                </label>
+                <select
+                  name="language"
+                  defaultValue="en"
+                  className="border-none bg-theme-settings-input-bg w-full text-white text-sm rounded-lg focus:outline-primary-button active:outline-primary-button outline-none block p-2.5"
+                >
+                  {supportedLanguages.map((lang) => (
+                    <option key={lang} value={lang}>
+                      {getLanguageName(lang)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="timezone"
+                  className="block mb-2 text-sm font-medium text-white"
+                >
+                  Timezone
+                </label>
+                <TimezoneSelector name="timezone" />
               </div>
               <div>
                 <label

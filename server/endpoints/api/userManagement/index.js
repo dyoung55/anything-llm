@@ -23,12 +23,20 @@ function apiUserManagementEndpoints(app) {
                   {
                     "id": 1,
                     "username": "john_doe",
-                    "role": "admin"
+                    "role": "admin",
+                    "fullName": "John Doe",
+                    "email": "john@example.com",
+                    "language": "en",
+                    "timezone": "America/New_York"
                   },
                   {
                     "id": 2,
                     "username": "jane_smith",
-                    "role": "default"
+                    "role": "default",
+                    "fullName": null,
+                    "email": null,
+                    "language": null,
+                    "timezone": null
                   }
                 ]
               }
@@ -52,11 +60,7 @@ function apiUserManagementEndpoints(app) {
           .send("Instance is not in Multi-User mode. Permission denied.");
 
       const users = await User.where();
-      const filteredUsers = users.map((user) => ({
-        id: user.id,
-        username: user.username,
-        role: user.role,
-      }));
+      const filteredUsers = users.map((user) => User.filterFields(user));
       response.status(200).json({ users: filteredUsers });
     } catch (e) {
       console.error(e.message, e);

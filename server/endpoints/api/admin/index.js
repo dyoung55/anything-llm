@@ -52,6 +52,10 @@ function apiAdminEndpoints(app) {
                 {
                   username: "sample-sam",
                   role: 'default',
+                  fullName: 'Sample Sam',
+                  email: 'sample-sam@example.com',
+                  language: 'en',
+                  timezone: 'America/New_York',
                 }
              ]
             }
@@ -94,7 +98,11 @@ function apiAdminEndpoints(app) {
             example: {
               username: "sample-sam",
               password: 'hunter2',
-              role: 'default | admin'
+              role: 'default | admin',
+              fullName: 'Sample Sam',
+              email: 'sample-sam@example.com',
+              language: 'en',
+              timezone: 'America/New_York'
             }
           }
         }
@@ -160,6 +168,10 @@ function apiAdminEndpoints(app) {
               password: 'hunter2',
               role: 'default | admin',
               suspended: 0,
+              fullName: 'Sample Sam',
+              email: 'sample-sam@example.com',
+              language: 'en',
+              timezone: 'America/New_York',
             }
           }
         }

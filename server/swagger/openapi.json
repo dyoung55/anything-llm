@@ -107,7 +107,11 @@
                     "users": [
                       {
                         "username": "sample-sam",
-                        "role": "default"
+                        "role": "default",
+                        "fullName": "Sample Sam",
+                        "email": "sample-sam@example.com",
+                        "language": "en",
+                        "timezone": "America/New_York"
                       }
                     ]
                   }
@@ -198,7 +202,11 @@
               "example": {
                 "username": "sample-sam",
                 "password": "hunter2",
-                "role": "default | admin"
+                "role": "default | admin",
+                "fullName": "Sample Sam",
+                "email": "sample-sam@example.com",
+                "language": "en",
+                "timezone": "America/New_York"
               }
             }
           }
@@ -268,7 +276,11 @@
                 "username": "sample-sam",
                 "password": "hunter2",
                 "role": "default | admin",
-                "suspended": 0
+                "suspended": 0,
+                "fullName": "Sample Sam",
+                "email": "sample-sam@example.com",
+                "language": "en",
+                "timezone": "America/New_York"
               }
             }
           }
@@ -3349,12 +3361,20 @@
                       {
                         "id": 1,
                         "username": "john_doe",
-                        "role": "admin"
+                        "role": "admin",
+                        "fullName": "John Doe",
+                        "email": "john@example.com",
+                        "language": "en",
+                        "timezone": "America/New_York"
                       },
                       {
                         "id": 2,
                         "username": "jane_smith",
-                        "role": "default"
+                        "role": "default",
+                        "fullName": null,
+                        "email": null,
+                        "language": null,
+                        "timezone": null
                       }
                     ]
                   }

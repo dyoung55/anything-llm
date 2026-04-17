@@ -1443,7 +1443,7 @@ function systemEndpoints(app) {
   app.post("/system/user", [validatedRequest], async (request, response) => {
     try {
       const sessionUser = await userFromSession(request, response);
-      const { username, password, bio } = reqBody(request);
+      const { username, password, bio, language, timezone } = reqBody(request);
       const id = Number(sessionUser.id);
 
       if (!id) {
@@ -1458,6 +1458,8 @@ function systemEndpoints(app) {
         updates.username = User.validations.username(String(username));
       if (password) updates.password = String(password);
       if (bio) updates.bio = String(bio);
+      if (language) updates.language = User.validations.language(String(language));
+      if (timezone) updates.timezone = User.validations.timezone(String(timezone));
 
       if (Object.keys(updates).length === 0) {
         response

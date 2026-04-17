@@ -7,6 +7,7 @@ const eagerLoadContextWindows = require("./eagerLoadContextWindows");
 const markOnboarded = require("./markOnboarded");
 const { PushNotifications } = require("../PushNotifications");
 const { migrateWorkspaceAgentConfig } = require("../migrations/migrateWorkspaceAgentConfig");
+const { addUserProfileFields } = require("../migrations/addUserProfileFields");
 const { TelegramBotService } = require("../telegramBot");
 const MCPCompatibilityLayer = require("../MCP");
 
@@ -36,6 +37,7 @@ function bootSSL(app, port = 3001) {
         await markOnboarded();
         await setupTelemetry();
         await migrateWorkspaceAgentConfig();
+      await addUserProfileFields();
         new CommunicationKey(true);
         new EncryptionManager();
         new BackgroundService().boot();
@@ -76,6 +78,7 @@ function bootHTTP(app, port = 3001) {
       await markOnboarded();
       await setupTelemetry();
       await migrateWorkspaceAgentConfig();
+      await addUserProfileFields();
       new CommunicationKey(true);
       new EncryptionManager();
       new BackgroundService().boot();

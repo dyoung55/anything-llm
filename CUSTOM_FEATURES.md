@@ -176,6 +176,41 @@ Admin dashboard showing system usage statistics and metrics.
 
 ---
 
+### 11. **Extended User Profile Fields**
+Adds `fullName`, `email`, `language` (BCP 47), and `timezone` (IANA) fields to the User model.
+
+**Design:**
+- `fullName` and `email` are admin-only to write; users see them as read-only in their profile
+- `language` and `timezone` are editable by the user in their Account modal and by admins
+- Language is synced into i18n on save so the UI language updates immediately
+- All four fields are exposed as system prompt variables
+
+**Files to Check:**
+- `server/prisma/schema.prisma` — `users` model must include all four new fields
+- `server/models/user.js` — `writable` array, `castColumnValue`, `validations`, and `create()`
+- `server/models/systemPromptVariables.js` — `{user.fullName}`, `{user.email}`, `{user.language}`, `{user.timezone}` DEFAULT_VARIABLES entries
+- `server/endpoints/system.js` — `POST /system/user` must accept `language` and `timezone` (but NOT `fullName`/`email`)
+- `server/endpoints/api/admin/index.js` — swagger examples for user endpoints
+- `server/endpoints/api/userManagement/index.js` — `GET /v1/users` must use `User.filterFields()` (not a manual field projection)
+- `frontend/src/components/TimezoneSelector/index.jsx` — reusable IANA timezone `<select>` component
+- `frontend/src/pages/Admin/Users/` — table columns, NewUserModal, EditUserModal
+- `frontend/src/components/UserMenu/AccountModal/index.jsx` — username disabled, read-only fullName/email, language/timezone dropdowns
+
+**System Prompt Variables:**
+- `{user.fullName}` — user's full name
+- `{user.email}` — user's email address
+- `{user.language}` — user's preferred language (BCP 47)
+- `{user.timezone}` — user's timezone (IANA identifier)
+
+**API Endpoints affected:**
+- `GET /v1/admin/users` — returns new fields
+- `POST /v1/admin/users/new` — accepts new fields
+- `POST /v1/admin/users/:id` — accepts new fields
+- `GET /v1/users` — returns new fields (via `User.filterFields()`)
+- `POST /system/user` — accepts `language` and `timezone`
+
+---
+
 ## Important Merge Conflict Patterns
 
 When merging upstream releases, watch for these patterns:
@@ -231,6 +266,7 @@ Custom migrations that must run on every instance:
 1. `migrateWorkspaceAgentConfig.js` — Create workspace agent config table
 2. `migrateWorkspaceSavedPrompts.js` — Create saved prompts table
 3. `migrateWorkspaceChatApiKey.js` — Add chatApiKey field to workspace
+4. `addUserProfileFields.js` — Add fullName, email, language, timezone to users table
 
 These run automatically via `server/utils/boot/index.js` during startup.
 
@@ -250,6 +286,11 @@ After merging upstream:
 - [ ] Anthropic models use correct max token limits
 - [ ] When agent tool call limit is hit, agent returns graceful summary instead of 400 error
 - [ ] Analytics tracking works (if enabled)
+- [ ] User profile fields (fullName, email, language, timezone) appear in Admin Users table and modals
+- [ ] Account modal shows username as read-only, fullName/email as "Set by administrator"
+- [ ] Language and timezone dropdowns save to DB and sync i18n on save
+- [ ] System prompt variables `{user.fullName}`, `{user.email}`, `{user.language}`, `{user.timezone}` resolve correctly
+- [ ] `/v1/users` and `/v1/admin/users` return all new fields
 - [ ] Build completes without errors: `npm run build`
 
 ---

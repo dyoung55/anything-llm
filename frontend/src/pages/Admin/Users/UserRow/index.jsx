@@ -62,6 +62,8 @@ export default function UserRow({ currUser, user }) {
         <th scope="row" className="px-6 whitespace-nowrap">
           {user.username}
         </th>
+        <td className="px-6">{user.fullName || "—"}</td>
+        <td className="px-6">{user.email || "—"}</td>
         <td className="px-6">{titleCase(user.role)}</td>
         <td className="px-6">{user.createdAt}</td>
         <td className="px-6 flex items-center gap-x-6 h-full mt-2">
