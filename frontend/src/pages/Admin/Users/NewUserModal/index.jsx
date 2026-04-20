@@ -39,8 +39,8 @@ export default function NewUserModal({ closeModal }) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="relative w-full max-w-2xl bg-theme-bg-secondary rounded-lg shadow border-2 border-theme-modal-border">
-        <div className="relative p-6 border-b rounded-t border-theme-modal-border">
+      <div className="relative w-full max-w-2xl bg-theme-bg-secondary rounded-lg shadow border-2 border-theme-modal-border flex flex-col max-h-[75vh]">
+        <div className="relative p-6 border-b rounded-t border-theme-modal-border flex-shrink-0">
           <div className="w-full flex gap-x-2 items-center">
             <h3 className="text-xl font-semibold text-white overflow-hidden overflow-ellipsis whitespace-nowrap">
               Add user to instance
@@ -54,7 +54,7 @@ export default function NewUserModal({ closeModal }) {
             <X size={24} weight="bold" className="text-white" />
           </button>
         </div>
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           <form onSubmit={handleCreate}>
             <div className="space-y-4">
               <div>
