@@ -5,7 +5,7 @@ import { Check, PencilSimple, Trash, X } from "@phosphor-icons/react";
 import { userFromStorage } from "@/utils/request";
 import System from "@/models/system";
 
-export default function ApiKeyRow({ apiKey, removeApiKey }) {
+export default function ApiKeyRow({ apiKey, removeApiKey, isMultiUser }) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [description, setDescription] = useState(apiKey.description || "");
@@ -87,7 +87,7 @@ export default function ApiKeyRow({ apiKey, removeApiKey }) {
                   if (e.key === "Escape") handleEditCancel();
                 }}
                 placeholder="Add a description..."
-                className="border-none bg-theme-settings-input-bg text-white placeholder:text-white/30 text-xs rounded outline-none px-2 py-1 w-48"
+                className="border-none bg-theme-settings-input-bg text-white light:text-black placeholder:text-white/30 placeholder:light:text-black/40 text-xs rounded outline-none px-2 py-1 w-48"
               />
               <button
                 onClick={handleEditSave}
@@ -97,26 +97,28 @@ export default function ApiKeyRow({ apiKey, removeApiKey }) {
               </button>
               <button
                 onClick={handleEditCancel}
-                className="p-1 rounded hover:bg-white/10 text-white/60"
+                className="p-1 rounded hover:bg-white/10 hover:light:bg-black/10 text-white/60 light:text-black/60"
               >
                 <X size={14} weight="bold" />
               </button>
             </div>
           ) : (
             <div className="group flex items-center gap-x-1">
-              <span className="text-white/60">
+              <span className="text-white/60 light:text-black/60">
                 {apiKey.description || "—"}
               </span>
               <button
                 onClick={handleEditStart}
-                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 text-white/50 transition-opacity"
+                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 hover:light:bg-black/10 text-white/50 light:text-black/40 transition-opacity"
               >
                 <PencilSimple size={12} />
               </button>
             </div>
           )}
         </td>
-        <td className="px-6 text-left">{apiKey.createdBy?.username || "--"}</td>
+        {isMultiUser && (
+          <td className="px-6 text-left">{apiKey.createdBy?.username || "--"}</td>
+        )}
         <td className="px-6">{apiKey.createdAt}</td>
         <td className="px-6 flex items-center gap-x-6 h-full mt-1">
           <button

@@ -20,6 +20,7 @@ export default function AdminApiKeys() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [apiKeys, setApiKeys] = useState([]);
+  const isMultiUser = !!userFromStorage();
 
   const fetchExistingKeys = async () => {
     const user = userFromStorage();
@@ -93,9 +94,11 @@ export default function AdminApiKeys() {
                     <th scope="col" className="px-6 py-3">
                       Description
                     </th>
-                    <th scope="col" className="px-6 py-3">
-                      {t("api.table.by")}
-                    </th>
+                    {isMultiUser && (
+                      <th scope="col" className="px-6 py-3">
+                        {t("api.table.by")}
+                      </th>
+                    )}
                     <th scope="col" className="px-6 py-3">
                       {t("api.table.created")}
                     </th>
@@ -107,7 +110,7 @@ export default function AdminApiKeys() {
                 <tbody>
                   {apiKeys.length === 0 ? (
                     <tr className="bg-transparent text-theme-text-secondary text-sm font-medium">
-                      <td colSpan="5" className="px-6 py-4 text-center">
+                      <td colSpan={isMultiUser ? 5 : 4} className="px-6 py-4 text-center">
                         No API keys found
                       </td>
                     </tr>
@@ -117,6 +120,7 @@ export default function AdminApiKeys() {
                         key={apiKey.id}
                         apiKey={apiKey}
                         removeApiKey={removeApiKey}
+                        isMultiUser={isMultiUser}
                       />
                     ))
                   )}
