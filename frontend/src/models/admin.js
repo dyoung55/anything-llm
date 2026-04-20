@@ -205,14 +205,32 @@ const Admin = {
         return { apiKeys: [], error: e.message };
       });
   },
-  generateApiKey: async function () {
+  generateApiKey: async function (description = null) {
     return fetch(`${API_BASE}/admin/generate-api-key`, {
       method: "POST",
-      headers: baseHeaders(),
+      headers: { ...baseHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ description }),
     })
       .then((res) => {
         if (!res.ok) {
           throw new Error(res.statusText || "Error generating api key.");
+        }
+        return res.json();
+      })
+      .catch((e) => {
+        console.error(e);
+        return { apiKey: null, error: e.message };
+      });
+  },
+  updateApiKey: async function (apiKeyId = "", description = null) {
+    return fetch(`${API_BASE}/admin/api-key/${apiKeyId}`, {
+      method: "PATCH",
+      headers: { ...baseHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ description }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(res.statusText || "Error updating api key.");
         }
         return res.json();
       })

@@ -22,8 +22,8 @@ storage/push-notifications/*
 storage/models/context-windows/*
 storage/models/tesseract/*
 storage/plugins/workspace-agent-config/*
-storage/plugins/.workspace-agent-config-migrated
-storage/.user-profile-fields-migrated
+storage/.*-migrated
+storage/plugins/.*-migrated
 storage/direct-uploads
 logs/server.log
 *.db

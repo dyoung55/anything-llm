@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Admin from "@/models/admin";
 import showToast from "@/utils/toast";
-import { Trash } from "@phosphor-icons/react";
+import { Check, PencilSimple, Trash, X } from "@phosphor-icons/react";
 import { userFromStorage } from "@/utils/request";
 import System from "@/models/system";
 
 export default function ApiKeyRow({ apiKey, removeApiKey }) {
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [description, setDescription] = useState(apiKey.description || "");
+  const inputRef = useRef(null);
+
   const handleDelete = async () => {
     if (
       !window.confirm(
@@ -29,6 +33,31 @@ export default function ApiKeyRow({ apiKey, removeApiKey }) {
     setCopied(true);
   };
 
+  const handleEditStart = () => {
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleEditCancel = () => {
+    setDescription(apiKey.description || "");
+    setEditing(false);
+  };
+
+  const handleEditSave = async () => {
+    const user = userFromStorage();
+    const Model = !!user ? Admin : System;
+    const newDesc = description.trim() || null;
+    const { error } = await Model.updateApiKey(apiKey.id, newDesc);
+    if (error) {
+      showToast("Failed to update description", "error");
+      return;
+    }
+    apiKey.description = newDesc;
+    setDescription(newDesc || "");
+    setEditing(false);
+    showToast("Description updated", "success");
+  };
+
   useEffect(() => {
     function resetStatus() {
       if (!copied) return false;
@@ -44,6 +73,48 @@ export default function ApiKeyRow({ apiKey, removeApiKey }) {
       <tr className="bg-transparent text-white text-opacity-80 text-xs font-medium border-b border-white/10 h-10">
         <td scope="row" className="px-6 whitespace-nowrap">
           {apiKey.secret}
+        </td>
+        <td className="px-6">
+          {editing ? (
+            <div className="flex items-center gap-x-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleEditSave();
+                  if (e.key === "Escape") handleEditCancel();
+                }}
+                placeholder="Add a description..."
+                className="border-none bg-theme-settings-input-bg text-white placeholder:text-white/30 text-xs rounded outline-none px-2 py-1 w-48"
+              />
+              <button
+                onClick={handleEditSave}
+                className="p-1 rounded hover:bg-white/10 text-green-400"
+              >
+                <Check size={14} weight="bold" />
+              </button>
+              <button
+                onClick={handleEditCancel}
+                className="p-1 rounded hover:bg-white/10 text-white/60"
+              >
+                <X size={14} weight="bold" />
+              </button>
+            </div>
+          ) : (
+            <div className="group flex items-center gap-x-1">
+              <span className="text-white/60">
+                {apiKey.description || "—"}
+              </span>
+              <button
+                onClick={handleEditStart}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 text-white/50 transition-opacity"
+              >
+                <PencilSimple size={12} />
+              </button>
+            </div>
+          )}
         </td>
         <td className="px-6 text-left">{apiKey.createdBy?.username || "--"}</td>
         <td className="px-6">{apiKey.createdAt}</td>

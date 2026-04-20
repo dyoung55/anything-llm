@@ -8,6 +8,7 @@ const markOnboarded = require("./markOnboarded");
 const { PushNotifications } = require("../PushNotifications");
 const { migrateWorkspaceAgentConfig } = require("../migrations/migrateWorkspaceAgentConfig");
 const { addUserProfileFields } = require("../migrations/addUserProfileFields");
+const { addApiKeyDescription } = require("../migrations/addApiKeyDescription");
 const { TelegramBotService } = require("../telegramBot");
 const MCPCompatibilityLayer = require("../MCP");
 
@@ -38,6 +39,7 @@ function bootSSL(app, port = 3001) {
         await setupTelemetry();
         await migrateWorkspaceAgentConfig();
       await addUserProfileFields();
+      await addApiKeyDescription();
         new CommunicationKey(true);
         new EncryptionManager();
         new BackgroundService().boot();
@@ -79,6 +81,7 @@ function bootHTTP(app, port = 3001) {
       await setupTelemetry();
       await migrateWorkspaceAgentConfig();
       await addUserProfileFields();
+      await addApiKeyDescription();
       new CommunicationKey(true);
       new EncryptionManager();
       new BackgroundService().boot();

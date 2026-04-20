@@ -91,6 +91,9 @@ export default function AdminApiKeys() {
                       {t("api.table.key")}
                     </th>
                     <th scope="col" className="px-6 py-3">
+                      Description
+                    </th>
+                    <th scope="col" className="px-6 py-3">
                       {t("api.table.by")}
                     </th>
                     <th scope="col" className="px-6 py-3">
@@ -104,7 +107,7 @@ export default function AdminApiKeys() {
                 <tbody>
                   {apiKeys.length === 0 ? (
                     <tr className="bg-transparent text-theme-text-secondary text-sm font-medium">
-                      <td colSpan="4" className="px-6 py-4 text-center">
+                      <td colSpan="5" className="px-6 py-4 text-center">
                         No API keys found
                       </td>
                     </tr>

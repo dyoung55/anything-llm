@@ -9,18 +9,32 @@ const ApiKey = {
     return uuidAPIKey.create().apiKey;
   },
 
-  create: async function (createdByUserId = null) {
+  create: async function (createdByUserId = null, description = null) {
     try {
       const apiKey = await prisma.api_keys.create({
         data: {
           secret: this.makeSecret(),
           createdBy: createdByUserId,
+          description,
         },
       });
 
       return { apiKey, error: null };
     } catch (error) {
       console.error("FAILED TO CREATE API KEY.", error.message);
+      return { apiKey: null, error: error.message };
+    }
+  },
+
+  update: async function (id, data = {}) {
+    try {
+      const apiKey = await prisma.api_keys.update({
+        where: { id: Number(id) },
+        data,
+      });
+      return { apiKey, error: null };
+    } catch (error) {
+      console.error("FAILED TO UPDATE API KEY.", error.message);
       return { apiKey: null, error: error.message };
     }
   },

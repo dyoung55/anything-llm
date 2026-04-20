@@ -1165,13 +1165,14 @@ function systemEndpoints(app) {
   app.post(
     "/system/generate-api-key",
     [validatedRequest],
-    async (_, response) => {
+    async (request, response) => {
       try {
         if (response.locals.multiUserMode) {
           return response.sendStatus(401).end();
         }
 
-        const { apiKey, error } = await ApiKey.create();
+        const { description = null } = request.body || {};
+        const { apiKey, error } = await ApiKey.create(null, description);
         await EventLogs.logEvent(
           "api_key_created",
           {},
@@ -1187,6 +1188,27 @@ function systemEndpoints(app) {
           apiKey: null,
           error: "Error generating api key.",
         });
+      }
+    }
+  );
+
+  app.patch(
+    "/system/api-key/:id",
+    [validatedRequest],
+    async (request, response) => {
+      try {
+        if (response.locals.multiUserMode)
+          return response.sendStatus(401).end();
+        const { id } = request.params;
+        if (!id || isNaN(Number(id))) return response.sendStatus(400).end();
+        const { description } = request.body || {};
+        const { apiKey, error } = await ApiKey.update(Number(id), {
+          description: description ?? null,
+        });
+        return response.status(200).json({ apiKey, error });
+      } catch (error) {
+        console.error(error);
+        response.sendStatus(500).end();
       }
     }
   );

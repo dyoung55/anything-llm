@@ -8,6 +8,7 @@ import showToast from "@/utils/toast";
 
 export default function NewApiKeyModal({ closeModal, onSuccess }) {
   const [apiKey, setApiKey] = useState(null);
+  const [description, setDescription] = useState("");
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -17,7 +18,9 @@ export default function NewApiKeyModal({ closeModal, onSuccess }) {
     const user = userFromStorage();
     const Model = !!user ? Admin : System;
 
-    const { apiKey: newApiKey, error } = await Model.generateApiKey();
+    const { apiKey: newApiKey, error } = await Model.generateApiKey(
+      description.trim() || null
+    );
     if (!!newApiKey) {
       setApiKey(newApiKey);
       onSuccess();
@@ -65,6 +68,21 @@ export default function NewApiKeyModal({ closeModal, onSuccess }) {
           <form onSubmit={handleCreate}>
             <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
               {error && <p className="text-red-400 text-sm">Error: {error}</p>}
+              {!apiKey && (
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1">
+                    Description{" "}
+                    <span className="text-white/40 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g. CI/CD pipeline, mobile app..."
+                    className="border-none bg-theme-settings-input-bg text-white placeholder:text-theme-settings-input-placeholder text-sm rounded-lg outline-none block w-full p-2.5"
+                  />
+                </div>
+              )}
               {apiKey && (
                 <div className="relative">
                   <input

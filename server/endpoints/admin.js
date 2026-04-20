@@ -508,7 +508,8 @@ function adminEndpoints(app) {
     async (request, response) => {
       try {
         const user = await userFromSession(request, response);
-        const { apiKey, error } = await ApiKey.create(user.id);
+        const { description = null } = request.body || {};
+        const { apiKey, error } = await ApiKey.create(user.id, description);
         await EventLogs.logEvent(
           "api_key_created",
           { createdBy: user?.username },
@@ -518,6 +519,25 @@ function adminEndpoints(app) {
           apiKey,
           error,
         });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.patch(
+    "/admin/api-key/:id",
+    [validatedRequest, strictMultiUserRoleValid([ROLES.admin])],
+    async (request, response) => {
+      try {
+        const { id } = request.params;
+        if (!id || isNaN(Number(id))) return response.sendStatus(400).end();
+        const { description } = request.body || {};
+        const { apiKey, error } = await ApiKey.update(Number(id), {
+          description: description ?? null,
+        });
+        return response.status(200).json({ apiKey, error });
       } catch (e) {
         console.error(e);
         response.sendStatus(500).end();

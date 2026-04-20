@@ -211,6 +211,34 @@ Adds `fullName`, `email`, `language` (BCP 47), and `timezone` (IANA) fields to t
 
 ---
 
+### 12. **API Key Descriptions**
+Optional description field on Developer API keys so each key can be labeled by its purpose.
+
+**Features:**
+- Description is set at creation time in the "Create new API key" modal (optional text input)
+- Description is shown as a column in the API keys table
+- Description can be edited inline after creation (click pencil icon on hover)
+
+**Files to Check:**
+- `server/prisma/schema.prisma` — `api_keys` model must include `description String?`
+- `server/models/apiKeys.js` — `create()` accepts `description` param; new `update()` method
+- `server/endpoints/admin.js` — `POST /admin/generate-api-key` accepts `description`; new `PATCH /admin/api-key/:id`
+- `server/endpoints/system.js` — `POST /system/generate-api-key` accepts `description`; new `PATCH /system/api-key/:id`
+- `frontend/src/models/admin.js` — `generateApiKey(description)`, new `updateApiKey(id, description)`
+- `frontend/src/models/system.js` — same as admin model
+- `frontend/src/pages/GeneralSettings/ApiKeys/NewApiKeyModal/index.jsx` — description input field
+- `frontend/src/pages/GeneralSettings/ApiKeys/ApiKeyRow/index.jsx` — description column with inline edit
+- `frontend/src/pages/GeneralSettings/ApiKeys/index.jsx` — Description table header, colSpan 5
+- Database migration: `server/utils/migrations/addApiKeyDescription.js`
+
+**API Endpoints added:**
+```
+PATCH /admin/api-key/:id       — update description (multi-user/admin)
+PATCH /system/api-key/:id      — update description (single-user)
+```
+
+---
+
 ## Important Merge Conflict Patterns
 
 When merging upstream releases, watch for these patterns:
@@ -267,6 +295,7 @@ Custom migrations that must run on every instance:
 2. `migrateWorkspaceSavedPrompts.js` — Create saved prompts table
 3. `migrateWorkspaceChatApiKey.js` — Add chatApiKey field to workspace
 4. `addUserProfileFields.js` — Add fullName, email, language, timezone to users table
+5. `addApiKeyDescription.js` — Add description column to api_keys table
 
 These run automatically via `server/utils/boot/index.js` during startup.
 
@@ -292,6 +321,9 @@ After merging upstream:
 - [ ] System prompt variables `{user.fullName}`, `{user.email}`, `{user.language}`, `{user.timezone}` resolve correctly
 - [ ] `/v1/users` and `/v1/admin/users` return all new fields
 - [ ] Build completes without errors: `npm run build`
+- [ ] API key description can be set at creation time and appears in the table
+- [ ] Existing keys without description show "—" in the description column
+- [ ] Description can be edited inline via pencil icon; saves on Enter or ✓ button
 
 ---
 
