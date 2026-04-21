@@ -5,6 +5,7 @@ import EditUserModal from "./EditUserModal";
 import showToast from "@/utils/toast";
 import { useModal } from "@/hooks/useModal";
 import ModalWrapper from "@/components/ModalWrapper";
+import { formatDateTime } from "@/utils/directories";
 
 const ModMap = {
   admin: ["admin", "manager", "default"],
@@ -65,7 +66,7 @@ export default function UserRow({ currUser, user }) {
         <td className="px-6">{user.fullName || "—"}</td>
         <td className="px-6">{user.email || "—"}</td>
         <td className="px-6">{titleCase(user.role)}</td>
-        <td className="px-6">{user.createdAt}</td>
+        <td className="px-6 whitespace-nowrap">{formatDateTime(user.createdAt)}</td>
         <td className="px-6 flex items-center gap-x-6 h-full mt-2">
           {canModify && (
             <button

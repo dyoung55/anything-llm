@@ -192,7 +192,7 @@ async function aggregateUsageSeries(where) {
       where: { AND: [where, { id: { gt: lastId } }] },
       orderBy: { id: "asc" },
       take: BATCH_SIZE,
-      select: { id: true, createdAt: true, prompt: true, response: true, workspaceId: true },
+      select: { id: true, createdAt: true, prompt: true, response: true, workspaceId: true, user_id: true },
     });
 
     if (batch.length === 0) break;
@@ -219,6 +219,7 @@ async function aggregateUsageSeries(where) {
           completionTokens: 0,
           totalTokens: 0,
           workspaceBreakdown: {},
+          userBreakdown: {},
         });
       }
       const b = buckets.get(key);
@@ -241,6 +242,42 @@ async function aggregateUsageSeries(where) {
       b.workspaceBreakdown[wsId].promptTokens += tc.promptTokens;
       b.workspaceBreakdown[wsId].completionTokens += tc.completionTokens;
       b.workspaceBreakdown[wsId].totalTokens += tc.totalTokens;
+
+      // Track per-user breakdown
+      const uId = String(row.user_id ?? "unassigned");
+      if (!b.userBreakdown[uId]) {
+        b.userBreakdown[uId] = {
+          chatCount: 0,
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+          username: null,
+        };
+      }
+      b.userBreakdown[uId].chatCount++;
+      b.userBreakdown[uId].promptTokens += tc.promptTokens;
+      b.userBreakdown[uId].completionTokens += tc.completionTokens;
+      b.userBreakdown[uId].totalTokens += tc.totalTokens;
+    }
+  }
+
+  // Resolve usernames for all user IDs found in the breakdown
+  const allUserIds = new Set();
+  for (const b of buckets.values()) {
+    for (const uId of Object.keys(b.userBreakdown)) {
+      if (uId !== "unassigned") allUserIds.add(Number(uId));
+    }
+  }
+  if (allUserIds.size > 0) {
+    const users = await prisma.users.findMany({
+      where: { id: { in: [...allUserIds] } },
+      select: { id: true, username: true },
+    });
+    const userMap = new Map(users.map((u) => [String(u.id), u.username]));
+    for (const b of buckets.values()) {
+      for (const [uId, entry] of Object.entries(b.userBreakdown)) {
+        if (uId !== "unassigned") entry.username = userMap.get(uId) ?? null;
+      }
     }
   }
 

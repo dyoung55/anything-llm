@@ -5,6 +5,7 @@ import ModalWrapper from "@/components/ModalWrapper";
 import { useModal } from "@/hooks/useModal";
 import MarkdownRenderer from "../MarkdownRenderer";
 import { safeJsonParse } from "@/utils/request";
+import { formatDateTime } from "@/utils/directories";
 
 export default function ChatRow({ chat, onDelete }) {
   const {
@@ -51,7 +52,7 @@ export default function ChatRow({ chat, onDelete }) {
         >
           {truncate(safeJsonParse(chat.response, {})?.text, 40)}
         </td>
-        <td className="px-6">{chat.createdAt}</td>
+        <td className="px-6 whitespace-nowrap">{formatDateTime(chat.createdAt)}</td>
         <td className="px-6 flex items-center gap-x-6 h-full mt-1">
           <button
             onClick={handleDelete}

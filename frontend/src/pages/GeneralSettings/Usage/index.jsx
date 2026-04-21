@@ -62,6 +62,7 @@ function UsageDashboardInner() {
   const [userFilter, setUserFilter] = useState("");
   const [viaApi, setViaApi] = useState("all");
   const [chartMetric, setChartMetric] = useState("chats");
+  const [groupBy, setGroupBy] = useState("workspace");
 
   const [workspaces, setWorkspaces] = useState([]);
   const [users, setUsers] = useState([]);
@@ -186,6 +187,29 @@ function UsageDashboardInner() {
     [workspaces]
   );
 
+  const allUserIds = useMemo(() => {
+    const ids = new Set();
+    (series || []).forEach((s) =>
+      Object.keys(s.userBreakdown || {}).forEach((id) => ids.add(id))
+    );
+    return Array.from(ids);
+  }, [series]);
+
+  const isAllUsers = allUserIds.length > 1;
+
+  const userNameMap = useMemo(() => {
+    const map = {};
+    for (const s of series || []) {
+      for (const [uId, entry] of Object.entries(s.userBreakdown || {})) {
+        if (!map[uId])
+          map[uId] =
+            entry.username ??
+            (uId === "unassigned" ? "Unassigned" : `User ${uId}`);
+      }
+    }
+    return map;
+  }, [series]);
+
   const chartData = (series || []).map((s) => {
     const entry = {
       name: s.periodStart.slice(0, 10),
@@ -194,11 +218,17 @@ function UsageDashboardInner() {
       promptTokens: s.promptTokens,
       completionTokens: s.completionTokens,
     };
-    if (isAllWorkspaces) {
+    if (groupBy === "workspace" && isAllWorkspaces) {
       for (const wsId of allWorkspaceIds) {
         const wb = s.workspaceBreakdown?.[wsId];
         entry[`ws_${wsId}_chats`] = wb?.chatCount ?? 0;
         entry[`ws_${wsId}_tokens`] = wb?.totalTokens ?? 0;
+      }
+    } else if (groupBy === "user" && isAllUsers) {
+      for (const uId of allUserIds) {
+        const ub = s.userBreakdown?.[uId];
+        entry[`usr_${uId}_chats`] = ub?.chatCount ?? 0;
+        entry[`usr_${uId}_tokens`] = ub?.totalTokens ?? 0;
       }
     }
     return entry;
@@ -343,33 +373,64 @@ function UsageDashboardInner() {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-3 items-center">
-              <span className="text-xs text-theme-text-secondary">
-                {t("usageAnalytics.chartMetric")}
-              </span>
-              <div className="flex rounded-lg border border-white/10 light:border-theme-border-primary overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setChartMetric("chats")}
-                  className={`px-3 py-1.5 text-xs font-semibold ${
-                    chartMetric === "chats"
-                      ? "bg-primary-button text-white"
-                      : "bg-theme-bg-primary text-theme-text-secondary"
-                  }`}
-                >
-                  {t("usageAnalytics.metricChats")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChartMetric("tokens")}
-                  className={`px-3 py-1.5 text-xs font-semibold ${
-                    chartMetric === "tokens"
-                      ? "bg-primary-button text-white"
-                      : "bg-theme-bg-primary text-theme-text-secondary"
-                  }`}
-                >
-                  {t("usageAnalytics.metricTokens")}
-                </button>
+            <div className="flex flex-wrap gap-6 items-center">
+              <div className="flex flex-wrap gap-3 items-center">
+                <span className="text-xs text-theme-text-secondary">
+                  {t("usageAnalytics.chartMetric")}
+                </span>
+                <div className="flex rounded-lg border border-white/10 light:border-theme-border-primary overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setChartMetric("chats")}
+                    className={`px-3 py-1.5 text-xs font-semibold ${
+                      chartMetric === "chats"
+                        ? "bg-primary-button text-white"
+                        : "bg-theme-bg-primary text-theme-text-secondary"
+                    }`}
+                  >
+                    {t("usageAnalytics.metricChats")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartMetric("tokens")}
+                    className={`px-3 py-1.5 text-xs font-semibold ${
+                      chartMetric === "tokens"
+                        ? "bg-primary-button text-white"
+                        : "bg-theme-bg-primary text-theme-text-secondary"
+                    }`}
+                  >
+                    {t("usageAnalytics.metricTokens")}
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3 items-center">
+                <span className="text-xs text-theme-text-secondary">
+                  {t("usageAnalytics.groupBy")}
+                </span>
+                <div className="flex rounded-lg border border-white/10 light:border-theme-border-primary overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setGroupBy("workspace")}
+                    className={`px-3 py-1.5 text-xs font-semibold ${
+                      groupBy === "workspace"
+                        ? "bg-primary-button text-white"
+                        : "bg-theme-bg-primary text-theme-text-secondary"
+                    }`}
+                  >
+                    {t("usageAnalytics.groupByWorkspace")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGroupBy("user")}
+                    className={`px-3 py-1.5 text-xs font-semibold ${
+                      groupBy === "user"
+                        ? "bg-primary-button text-white"
+                        : "bg-theme-bg-primary text-theme-text-secondary"
+                    }`}
+                  >
+                    {t("usageAnalytics.groupByUser")}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -416,7 +477,7 @@ function UsageDashboardInner() {
                       }}
                       labelStyle={{ color: "var(--theme-text-primary)" }}
                     />
-                    {isAllWorkspaces && allWorkspaceIds.length > 0 ? (
+                    {groupBy === "workspace" && isAllWorkspaces && allWorkspaceIds.length > 0 ? (
                       <>
                         {allWorkspaceIds.map((wsId, i) => (
                           <Bar
@@ -429,6 +490,32 @@ function UsageDashboardInner() {
                             name={wsNameMap[wsId] ?? `Workspace ${wsId}`}
                             radius={
                               i === allWorkspaceIds.length - 1
+                                ? [4, 4, 0, 0]
+                                : [0, 0, 0, 0]
+                            }
+                          />
+                        ))}
+                        <Legend
+                          wrapperStyle={{ paddingTop: 12, fontSize: 12 }}
+                          contentStyle={{
+                            color: "var(--theme-text-primary)",
+                            fontSize: 12,
+                          }}
+                        />
+                      </>
+                    ) : groupBy === "user" && isAllUsers && allUserIds.length > 0 ? (
+                      <>
+                        {allUserIds.map((uId, i) => (
+                          <Bar
+                            key={uId}
+                            dataKey={`usr_${uId}_${
+                              chartMetric === "chats" ? "chats" : "tokens"
+                            }`}
+                            stackId="a"
+                            fill={WORKSPACE_COLORS[i % WORKSPACE_COLORS.length]}
+                            name={userNameMap[uId] ?? `User ${uId}`}
+                            radius={
+                              i === allUserIds.length - 1
                                 ? [4, 4, 0, 0]
                                 : [0, 0, 0, 0]
                             }

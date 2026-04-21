@@ -1,6 +1,7 @@
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { safeJsonParse } from "@/utils/request";
+import { formatDateTime } from "@/utils/directories";
 
 export default function LogRow({ log }) {
   const [expanded, setExpanded] = useState(false);
@@ -34,8 +35,8 @@ export default function LogRow({ log }) {
         <td className="px-6 border-transparent transform transition-transform duration-200">
           {log.user.username}
         </td>
-        <td className="px-6 border-transparent transform transition-transform duration-200">
-          {log.occurredAt}
+        <td className="px-6 border-transparent transform transition-transform duration-200 whitespace-nowrap">
+          {formatDateTime(log.occurredAt)}
         </td>
         {hasMetadata && (
           <div className="mt-1">

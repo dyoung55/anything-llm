@@ -9,6 +9,17 @@ export function formatDate(dateString) {
   return formattedDate;
 }
 
+export function formatDateTime(dateString) {
+  if (!dateString) return "—";
+  return new Date(dateString).toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function formatDateTimeAsMoment(dateString, format = "LLL") {
   if (!dateString) return moment().format(format);
   try {

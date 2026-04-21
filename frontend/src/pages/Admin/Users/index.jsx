@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/SettingsSidebar";
 import { isMobile } from "react-device-detect";
 import * as Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { UserPlus } from "@phosphor-icons/react";
+import { ArrowsDownUp, CaretDown, CaretUp, UserPlus } from "@phosphor-icons/react";
 import Admin from "@/models/admin";
 import UserRow from "./UserRow";
 import useUser from "@/hooks/useUser";
@@ -15,6 +15,7 @@ import Toggle from "@/components/lib/Toggle";
 
 export default function AdminUsers() {
   const { isOpen, openModal, closeModal } = useModal();
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="w-full h-full overflow-hidden bg-theme-bg-container flex">
@@ -36,16 +37,20 @@ export default function AdminUsers() {
               instance.
             </p>
           </div>
-          <div className="w-full justify-end flex">
-            <CTAButton
-              onClick={openModal}
-              className="mt-3 mr-0 mb-4 md:-mb-6 z-10"
-            >
-              <UserPlus className="h-4 w-4" weight="bold" /> Add user
-            </CTAButton>
-          </div>
-          <div className="overflow-x-auto">
-            <UsersContainer />
+          <div className="overflow-x-auto mt-6">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, username or email..."
+                className="border-none bg-theme-settings-input-bg text-theme-text-primary placeholder:text-theme-settings-input-placeholder text-sm rounded-lg outline-none px-4 py-2 flex-1 max-w-sm"
+              />
+              <CTAButton onClick={openModal} className="mr-0 shrink-0">
+                <UserPlus className="h-4 w-4" weight="bold" /> Add user
+              </CTAButton>
+            </div>
+            <UsersContainer searchQuery={searchQuery} />
           </div>
         </div>
         <ModalWrapper isOpen={isOpen}>
@@ -56,10 +61,12 @@ export default function AdminUsers() {
   );
 }
 
-function UsersContainer() {
+function UsersContainer({ searchQuery = "" }) {
   const { user: currUser } = useUser();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
+  const [sortColumn, setSortColumn] = useState("username");
+  const [sortDirection, setSortDirection] = useState("asc");
 
   useEffect(() => {
     async function fetchUsers() {
@@ -69,6 +76,37 @@ function UsersContainer() {
     }
     fetchUsers();
   }, []);
+
+  const displayedUsers = useMemo(() => {
+    let list = [...users];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (u) =>
+          u.username?.toLowerCase().includes(q) ||
+          u.fullName?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q)
+      );
+    }
+    list.sort((a, b) => {
+      const av = a[sortColumn] ?? "";
+      const bv = b[sortColumn] ?? "";
+      const cmp = String(av).localeCompare(String(bv), undefined, {
+        numeric: true,
+      });
+      return sortDirection === "asc" ? cmp : -cmp;
+    });
+    return list;
+  }, [users, searchQuery, sortColumn, sortDirection]);
+
+  function handleSort(column) {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  }
 
   if (loading) {
     return (
@@ -85,35 +123,54 @@ function UsersContainer() {
   }
 
   return (
-    <table className="w-full text-xs text-left rounded-lg min-w-[640px] border-spacing-0">
-      <thead className="text-theme-text-secondary text-xs leading-[18px] font-bold uppercase border-white/10 border-b">
-        <tr>
-          <th scope="col" className="px-6 py-3 rounded-tl-lg">
-            Username
-          </th>
-          <th scope="col" className="px-6 py-3">
-            Full Name
-          </th>
-          <th scope="col" className="px-6 py-3">
-            Email
-          </th>
-          <th scope="col" className="px-6 py-3">
-            Role
-          </th>
-          <th scope="col" className="px-6 py-3">
-            Date Added
-          </th>
-          <th scope="col" className="px-6 py-3 rounded-tr-lg">
-            {" "}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.map((user) => (
-          <UserRow key={user.id} currUser={currUser} user={user} />
-        ))}
-      </tbody>
-    </table>
+    <>
+      <table className="w-full text-xs text-left rounded-lg min-w-[640px] border-spacing-0">
+        <thead className="text-theme-text-secondary text-xs leading-[18px] font-bold uppercase border-white/10 border-b">
+          <tr>
+            <SortHeader col="username" label="Username" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} className="rounded-tl-lg" />
+            <SortHeader col="fullName" label="Full Name" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
+            <SortHeader col="email" label="Email" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
+            <SortHeader col="role" label="Role" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
+            <SortHeader col="createdAt" label="Date Added" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
+            <th scope="col" className="px-6 py-3 rounded-tr-lg">{" "}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {displayedUsers.map((user) => (
+            <UserRow key={user.id} currUser={currUser} user={user} />
+          ))}
+        </tbody>
+      </table>
+      {displayedUsers.length === 0 && (
+        <p className="text-sm text-theme-text-secondary py-4 text-center">
+          {searchQuery.trim() ? "No users match your search." : "No users found."}
+        </p>
+      )}
+    </>
+  );
+}
+
+function SortHeader({ col, label, sortColumn, sortDirection, onSort, className = "" }) {
+  const active = sortColumn === col;
+  return (
+    <th scope="col" className={`px-6 py-3 ${className}`}>
+      <button
+        type="button"
+        onClick={() => onSort(col)}
+        className="flex items-center gap-x-1 uppercase font-bold hover:text-theme-text-primary transition-colors"
+      >
+        {label}
+        {active ? (
+          sortDirection === "asc" ? (
+            <CaretUp weight="bold" size={12} />
+          ) : (
+            <CaretDown weight="bold" size={12} />
+          )
+        ) : (
+          <ArrowsDownUp size={12} className="opacity-40" />
+        )}
+      </button>
+    </th>
   );
 }
 

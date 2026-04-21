@@ -2,6 +2,7 @@ import { useRef } from "react";
 import Admin from "@/models/admin";
 import paths from "@/utils/paths";
 import { LinkSimple, Trash } from "@phosphor-icons/react";
+import { formatDateTime } from "@/utils/directories";
 
 export default function WorkspaceRow({ workspace, users: _users }) {
   const rowRef = useRef(null);
@@ -43,7 +44,7 @@ export default function WorkspaceRow({ workspace, users: _users }) {
             {workspace.userIds?.length}
           </a>
         </td>
-        <td className="px-6">{workspace.createdAt}</td>
+        <td className="px-6 whitespace-nowrap">{formatDateTime(workspace.createdAt)}</td>
         <td className="px-6 flex items-center gap-x-6 h-full mt-1">
           <button
             onClick={handleDelete}
