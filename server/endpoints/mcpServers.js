@@ -145,12 +145,14 @@ function mcpServersEndpoints(app) {
           "utf8"
         );
 
-        // Reload servers to apply changes
-        await mcp.reloadMCPServers();
+        // Reload servers in background so the response returns immediately
+        mcp
+          .reloadMCPServers()
+          .catch((err) => console.error("Background MCP reload error:", err));
 
         return response.status(200).json({
           success: true,
-          message: "MCP configuration updated successfully. Servers reloaded.",
+          message: "MCP configuration saved. Servers are reloading in the background.",
         });
       } catch (error) {
         console.error("Error updating MCP config:", error);

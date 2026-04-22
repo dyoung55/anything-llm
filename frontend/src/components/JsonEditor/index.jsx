@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import CodeMirror from "@uiw/react-codemirror";
+import { json } from "@codemirror/lang-json";
+import { oneDark } from "@codemirror/theme-one-dark";
 
 export default function JsonEditor({
   initialValue = {},
@@ -25,12 +28,6 @@ export default function JsonEditor({
       }
     }
   }, []);
-
-  const handleChange = (e) => {
-    setJsonText(e.target.value);
-    setError(null);
-    setValidationSuccess(false);
-  };
 
   const validateJson = () => {
     try {
@@ -76,13 +73,19 @@ export default function JsonEditor({
       )}
 
       <div className="relative">
-        <textarea
+        <CodeMirror
           value={jsonText}
-          onChange={handleChange}
+          height="384px"
+          extensions={[json()]}
+          theme={oneDark}
+          onChange={(value) => {
+            setJsonText(value);
+            setError(null);
+            setValidationSuccess(false);
+          }}
           readOnly={readOnly}
-          className="w-full h-96 p-4 bg-theme-bg-secondary text-theme-text-primary rounded-lg font-mono text-sm border border-theme-border focus:border-theme-text-primary focus:outline-none resize-y"
-          spellCheck={false}
-          placeholder='{\n  "key": "value"\n}'
+          basicSetup={{ tabSize: 2, indentOnInput: true }}
+          className="rounded-lg border border-theme-border focus-within:border-theme-text-primary overflow-hidden text-sm"
         />
         {error && (
           <div className="mt-2 p-3 bg-red-500/10 border border-red-500 rounded-lg">
@@ -99,18 +102,18 @@ export default function JsonEditor({
       {!readOnly && (
         <div className="flex gap-x-2">
           <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-4 py-2 bg-theme-button-primary text-white rounded-lg hover:bg-theme-button-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            {isSaving ? "Saving..." : "Save Configuration"}
-          </button>
-          <button
             type="button"
             onClick={validateJson}
             className="px-4 py-2 bg-theme-bg-secondary text-theme-text-primary border border-theme-border rounded-lg hover:bg-theme-bg-primary transition-all"
           >
             Validate JSON
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="px-4 py-2 bg-transparent text-green-400 border border-green-500 rounded-lg hover:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {isSaving ? "Saving..." : "Save Configuration"}
           </button>
         </div>
       )}

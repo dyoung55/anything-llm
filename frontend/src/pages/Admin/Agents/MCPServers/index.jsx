@@ -70,15 +70,15 @@ export function MCPServerHeader({
   const handleSaveJson = async (parsedJson) => {
     try {
       const { success, message, error } = await MCPServers.updateConfig(parsedJson);
-      
+
       if (success) {
         showToast(
-          message || "MCP configuration updated successfully. Servers reloaded.",
+          message || "MCP configuration saved. Servers are reloading in the background.",
           "success",
           { clear: true }
         );
-        // Refresh the server list
-        await fetchMCPConfig();
+        // Refresh server list in background after servers have had time to start
+        setTimeout(() => fetchMCPConfig(), 3000);
       } else {
         showToast(`Error: ${error || "Failed to update configuration"}`, "error", {
           clear: true,
