@@ -296,6 +296,15 @@ const router = createBrowserRouter([
         },
       },
       {
+        path: "/settings/feedback",
+        lazy: async () => {
+          const { default: FeedbackAnalytics } = await import(
+            "@/pages/GeneralSettings/FeedbackAnalytics"
+          );
+          return { element: <ManagerRoute Component={FeedbackAnalytics} /> };
+        },
+      },
+      {
         path: "/settings/invites",
         lazy: async () => {
           const { default: AdminInvites } = await import(

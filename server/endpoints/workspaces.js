@@ -497,7 +497,7 @@ function workspaceEndpoints(app) {
     async (request, response) => {
       try {
         const { chatId } = request.params;
-        const { feedback = null } = reqBody(request);
+        const { feedback = null, feedbackComment = null } = reqBody(request);
         const user = await userFromSession(request, response);
         const existingChat = await WorkspaceChats.get({
           id: Number(chatId),
@@ -506,7 +506,7 @@ function workspaceEndpoints(app) {
         });
 
         if (!existingChat) return response.status(404).json({ success: false });
-        await WorkspaceChats.updateFeedbackScore(chatId, feedback);
+        await WorkspaceChats.updateFeedbackScore(chatId, feedback, feedbackComment);
         return response.status(200).json({ success: true });
       } catch (error) {
         console.error("Error updating chat feedback:", error);

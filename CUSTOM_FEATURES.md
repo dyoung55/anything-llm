@@ -239,6 +239,48 @@ PATCH /system/api-key/:id      — update description (single-user)
 
 ---
 
+### 13. **Thumbs-Down Feedback Comments + Feedback Analytics Dashboard**
+Extends the existing thumbs-up feedback system with a thumbs-down button that prompts for a required text explanation, and adds a new admin analytics page to review all feedback.
+
+**Features:**
+- Thumbs-down button alongside thumbs-up on every AI chat response
+- Clicking thumbs-down opens a required-comment modal: "Help us improve D-Mind"
+- Comment is stored in `workspace_chats.feedbackComment`
+- Thumbs-up preserves existing behavior (no comment required)
+- Admin/manager "User Feedback" page at `/settings/feedback` with:
+  - Date range, workspace, user, and rating (up/down/all) filters
+  - Bar chart showing daily thumbs-up vs thumbs-down counts (Recharts)
+  - Summary cards (total, thumbs up, thumbs down, satisfaction rate)
+  - Paginated table with color-coded rating icons, user, workspace, date, truncated comment
+  - Click row → detail dialog showing rating, user, workspace, date, comment, original prompt, and AI response
+
+**Files to Check:**
+- `server/prisma/schema.prisma` — `workspace_chats` model must include `feedbackComment String?`
+- `server/models/workspaceChats.js` — `updateFeedbackScore(chatId, feedbackScore, feedbackComment)` accepts 3 args
+- `server/endpoints/workspaces.js` — `POST /workspace/:slug/chat-feedback/:chatId` passes `feedbackComment`
+- `server/utils/workspaceFeedbackAnalytics.js` — **new** query helper (buildFeedbackWhere, aggregateFeedbackSeries, fetchFeedbackRows)
+- `server/endpoints/system.js` — `POST /system/feedback-analytics` and `POST /system/feedback-analytics/rows`
+- `server/utils/migrations/addFeedbackComment.js` — boot-time `ALTER TABLE` migration
+- `server/utils/boot/index.js` — `addFeedbackComment()` registered in both `bootHTTP` and `bootSSL`
+- `frontend/src/components/WorkspaceChat/ChatContainer/ChatHistory/HistoricalMessage/Actions/index.jsx` — ThumbsDown button + FeedbackCommentModal
+- `frontend/src/models/workspace.js` — `updateChatFeedback(chatId, slug, feedback, feedbackComment)`
+- `frontend/src/models/system.js` — `feedbackAnalytics()` and `feedbackAnalyticsRows()`
+- `frontend/src/pages/GeneralSettings/FeedbackAnalytics/index.jsx` — **new** analytics page
+- `frontend/src/main.jsx` — `/settings/feedback` ManagerRoute registered
+- `frontend/src/components/SettingsSidebar/index.jsx` — "User Feedback" nav item
+- `frontend/src/utils/paths.js` — `paths.settings.feedback()`
+
+**API Endpoints added:**
+```
+POST /system/feedback-analytics        — chart series + totals (admin/manager)
+POST /system/feedback-analytics/rows   — paginated feedback rows (admin/manager)
+```
+
+**Database migration:** `server/utils/migrations/addFeedbackComment.js`
+Also includes Prisma migration file: `server/prisma/migrations/20260422000000_add_feedback_comment/`
+
+---
+
 ## Important Merge Conflict Patterns
 
 When merging upstream releases, watch for these patterns:

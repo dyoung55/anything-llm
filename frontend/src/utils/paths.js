@@ -111,6 +111,9 @@ export default {
     usage: () => {
       return "/settings/usage";
     },
+    feedback: () => {
+      return "/settings/feedback";
+    },
     llmPreference: () => {
       return "/settings/llm-preference";
     },

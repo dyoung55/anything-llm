@@ -63,6 +63,11 @@ const {
   buildUsageExportCsv,
 } = require("../utils/workspaceUsageAnalytics");
 const {
+  buildFeedbackWhere,
+  aggregateFeedbackSeries,
+  fetchFeedbackRows,
+} = require("../utils/workspaceFeedbackAnalytics");
+const {
   simpleSSOEnabled,
   simpleSSOLoginDisabled,
 } = require("../utils/middleware/simpleSSOEnabled");
@@ -1453,6 +1458,53 @@ function systemEndpoints(app) {
         );
         response.setHeader("Content-Type", "text/csv; charset=utf-8");
         response.status(200).send(result.csv);
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/system/feedback-analytics",
+    usageAnalyticsMiddleware,
+    async (request, response) => {
+      try {
+        const body = reqBody(request);
+        const where = buildFeedbackWhere(body);
+        const result = await aggregateFeedbackSeries(where);
+        if (result.error === "too_many_rows") {
+          response.status(422).json({
+            error:
+              "Too many matching rows for this range. Narrow the date range or filters.",
+            code: result.error,
+            totalCount: result.totalCount,
+            max: result.max,
+          });
+          return;
+        }
+        response.status(200).json({ series: result.series, totals: result.totals });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/system/feedback-analytics/rows",
+    usageAnalyticsMiddleware,
+    async (request, response) => {
+      try {
+        const body = reqBody(request);
+        const { limit = 25, offset = 0, ...filterBody } = body;
+        const where = buildFeedbackWhere(filterBody);
+        const { rows, totalCount } = await fetchFeedbackRows(
+          where,
+          Number(limit) || 25,
+          Number(offset) || 0
+        );
+        response.status(200).json({ rows, totalCount });
       } catch (e) {
         console.error(e);
         response.sendStatus(500).end();

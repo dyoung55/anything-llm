@@ -65,13 +65,13 @@ const Workspace = {
       .catch(() => []);
     return history;
   },
-  updateChatFeedback: async function (chatId, slug, feedback) {
+  updateChatFeedback: async function (chatId, slug, feedback, feedbackComment = null) {
     const result = await fetch(
       `${API_BASE}/workspace/${slug}/chat-feedback/${chatId}`,
       {
         method: "POST",
         headers: baseHeaders(),
-        body: JSON.stringify({ feedback }),
+        body: JSON.stringify({ feedback, feedbackComment }),
       }
     )
       .then((res) => res.ok)

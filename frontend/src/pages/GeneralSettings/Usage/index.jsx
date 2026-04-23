@@ -333,7 +333,7 @@ function UsageDashboardInner() {
               <button
                 type="button"
                 onClick={handleApply}
-                className="px-4 py-2 rounded-lg bg-theme-bg-primary border border-white/20 text-theme-text-primary text-sm font-semibold hover:bg-white/10"
+                className="px-4 py-2 rounded-lg bg-primary-button hover:light:bg-theme-bg-primary hover:text-theme-text-primary text-sm font-semibold hover:bg-secondary h-[34px]"
               >
                 {t("usageAnalytics.apply")}
               </button>

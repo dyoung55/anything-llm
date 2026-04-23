@@ -725,6 +725,39 @@ const System = {
         return { error: { error: e.message } };
       });
   },
+  feedbackAnalytics: async (filters = {}) => {
+    return await fetch(`${API_BASE}/system/feedback-analytics`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify(filters),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 422) return { error: data };
+        if (!res.ok) throw new Error(res.statusText || "Request failed");
+        return data;
+      })
+      .catch((e) => {
+        console.error(e);
+        return { error: { error: e.message } };
+      });
+  },
+  feedbackAnalyticsRows: async (filters = {}) => {
+    return await fetch(`${API_BASE}/system/feedback-analytics/rows`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify(filters),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(res.statusText || "Request failed");
+        return data;
+      })
+      .catch((e) => {
+        console.error(e);
+        return { rows: [], totalCount: 0, error: e.message };
+      });
+  },
   eventLogs: async (offset = 0) => {
     return await fetch(`${API_BASE}/system/event-logs`, {
       method: "POST",

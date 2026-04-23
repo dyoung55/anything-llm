@@ -263,7 +263,11 @@ const WorkspaceChats = {
       return [];
     }
   },
-  updateFeedbackScore: async function (chatId = null, feedbackScore = null) {
+  updateFeedbackScore: async function (
+    chatId = null,
+    feedbackScore = null,
+    feedbackComment = null
+  ) {
     if (!chatId) return;
     try {
       await prisma.workspace_chats.update({
@@ -273,6 +277,7 @@ const WorkspaceChats = {
         data: {
           feedbackScore:
             feedbackScore === null ? null : Number(feedbackScore) === 1,
+          feedbackComment: feedbackScore === null ? null : (feedbackComment ?? null),
         },
       });
       return;
