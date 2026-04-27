@@ -281,6 +281,39 @@ Also includes Prisma migration file: `server/prisma/migrations/20260422000000_ad
 
 ---
 
+### 9. **Sirius User Sync**
+Allows admins to trigger a sync of user data from the Sirius external API, either manually via a button or on a cron schedule.
+
+**Features:**
+- "Sync User Data" button on the Admin › Users page — fires a one-off POST to the Sirius API
+- Gear icon on the same page opens a settings dialog with:
+  - Toggle to enable periodic sync
+  - Cron expression input with live human-readable description (via `cronstrue`)
+- Every sync (manual or scheduled) logs to EventLogs (`sirius_user_sync_success` / `sirius_user_sync_failed`) and server console
+- Cron job managed dynamically via Bree — no server restart required when settings change
+
+**Environment variable:**
+- `SIRIUS_API_KEY` — API key sent as `x-api-token` header to the Sirius endpoint
+
+**Files to Check:**
+- `server/utils/sirius/syncUsers.js` — shared sync function (URL, headers, logging)
+- `server/jobs/sync-sirius-users.js` — Bree job wrapping the sync function
+- `server/utils/BackgroundWorkers/index.js` — `siriusSyncEnabled`, `siriusSyncCron`, `updateSiriusSync()`
+- `server/models/systemSettings.js` — `sirius_sync_enabled` and `sirius_sync_cron` in `supportedFields`
+- `server/endpoints/admin.js` — `POST /admin/sirius/sync-users`, `GET/POST /admin/sirius/settings`
+- `frontend/src/models/admin.js` — `siriusSyncUsers()`, `getSiriusSettings()`, `updateSiriusSettings()`
+- `frontend/src/pages/Admin/Users/index.jsx` — Sync button, gear icon, modal wiring
+- `frontend/src/pages/Admin/Users/SyncSettingsModal/index.jsx` — Settings modal
+
+**API Endpoints added:**
+```
+POST /admin/sirius/sync-users    — Trigger immediate sync (admin only)
+GET  /admin/sirius/settings      — Get enabled + cron settings (admin only)
+POST /admin/sirius/settings      — Save enabled + cron, updates live Bree schedule (admin only)
+```
+
+---
+
 ## Important Merge Conflict Patterns
 
 When merging upstream releases, watch for these patterns:

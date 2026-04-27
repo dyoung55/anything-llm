@@ -566,6 +566,72 @@ function adminEndpoints(app) {
       }
     }
   );
+
+  // ─── Sirius User Sync ────────────────────────────────────────────────────
+
+  app.post(
+    "/admin/sirius/sync-users",
+    [validatedRequest, strictMultiUserRoleValid([ROLES.admin])],
+    async (_request, response) => {
+      try {
+        const { syncSiriusUsers } = require("../utils/sirius/syncUsers");
+        const result = await syncSiriusUsers();
+        return response.status(200).json(result);
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.get(
+    "/admin/sirius/settings",
+    [validatedRequest, strictMultiUserRoleValid([ROLES.admin])],
+    async (_request, response) => {
+      try {
+        const enabledSetting = await SystemSettings.get({
+          label: "sirius_sync_enabled",
+        });
+        const cronSetting = await SystemSettings.get({
+          label: "sirius_sync_cron",
+        });
+        return response.status(200).json({
+          enabled: enabledSetting?.value === "true",
+          cron: cronSetting?.value || "",
+        });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.post(
+    "/admin/sirius/settings",
+    [validatedRequest, strictMultiUserRoleValid([ROLES.admin])],
+    async (request, response) => {
+      try {
+        const { enabled, cron } = reqBody(request);
+        await SystemSettings.updateSettings({
+          sirius_sync_enabled: String(!!enabled),
+          sirius_sync_cron: cron || "",
+        });
+
+        const {
+          BackgroundService,
+        } = require("../utils/BackgroundWorkers/index");
+        const bgService = new BackgroundService();
+        if (bgService.bree) {
+          await bgService.updateSiriusSync(!!enabled, cron || null);
+        }
+
+        return response.status(200).json({ success: true });
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
 }
 
 module.exports = { adminEndpoints };

@@ -7,6 +7,8 @@ class BackgroundService {
   name = "BackgroundWorkerService";
   static _instance = null;
   documentSyncEnabled = false;
+  siriusSyncEnabled = false;
+  siriusSyncCron = null;
   #root = path.resolve(__dirname, "../../jobs");
 
   #alwaysRunJobs = [
@@ -47,7 +49,18 @@ class BackgroundService {
 
   async boot() {
     const { DocumentSyncQueue } = require("../../models/documentSyncQueue");
+    const { SystemSettings } = require("../../models/systemSettings");
     this.documentSyncEnabled = await DocumentSyncQueue.enabled();
+
+    const siriusEnabledSetting = await SystemSettings.get({
+      label: "sirius_sync_enabled",
+    });
+    const siriusCronSetting = await SystemSettings.get({
+      label: "sirius_sync_cron",
+    });
+    this.siriusSyncEnabled = siriusEnabledSetting?.value === "true";
+    this.siriusSyncCron = siriusCronSetting?.value || null;
+
     const jobsToRun = this.jobs();
 
     this.#log("Starting...");
@@ -80,7 +93,36 @@ class BackgroundService {
   jobs() {
     const activeJobs = [...this.#alwaysRunJobs];
     if (this.documentSyncEnabled) activeJobs.push(...this.#documentSyncJobs);
+    if (this.siriusSyncEnabled && this.siriusSyncCron) {
+      activeJobs.push({ name: "sync-sirius-users", cron: this.siriusSyncCron });
+    }
     return activeJobs;
+  }
+
+  /**
+   * Dynamically enable or disable the Sirius user sync cron job at runtime.
+   * Called when an admin saves the sync settings via the UI.
+   * @param {boolean} enabled
+   * @param {string|null} cron - cron expression (e.g. "0 * * * *")
+   */
+  async updateSiriusSync(enabled, cron) {
+    try {
+      await this.bree.remove("sync-sirius-users");
+      this.#log("Removed existing sync-sirius-users job.");
+    } catch {
+      // job wasn't scheduled — that's fine
+    }
+
+    this.siriusSyncEnabled = enabled;
+    this.siriusSyncCron = cron || null;
+
+    if (enabled && cron) {
+      await this.bree.add({ name: "sync-sirius-users", cron });
+      await this.bree.start("sync-sirius-users");
+      this.#log(`Sirius user sync scheduled with cron: "${cron}"`);
+    } else {
+      this.#log("Sirius user sync disabled — no scheduled job running.");
+    }
   }
 
   onError(error, _workerMetadata) {

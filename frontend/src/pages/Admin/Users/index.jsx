@@ -3,19 +3,55 @@ import Sidebar from "@/components/SettingsSidebar";
 import { isMobile } from "react-device-detect";
 import * as Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { ArrowsDownUp, CaretDown, CaretUp, UserPlus } from "@phosphor-icons/react";
+import {
+  ArrowClockwise,
+  ArrowsDownUp,
+  CaretDown,
+  CaretUp,
+  GearSix,
+  UserPlus,
+} from "@phosphor-icons/react";
 import Admin from "@/models/admin";
 import UserRow from "./UserRow";
 import useUser from "@/hooks/useUser";
 import NewUserModal from "./NewUserModal";
+import SyncSettingsModal from "./SyncSettingsModal";
 import { useModal } from "@/hooks/useModal";
 import ModalWrapper from "@/components/ModalWrapper";
 import CTAButton from "@/components/lib/CTAButton";
 import Toggle from "@/components/lib/Toggle";
+import showToast from "@/utils/toast";
 
 export default function AdminUsers() {
   const { isOpen, openModal, closeModal } = useModal();
+  const {
+    isOpen: isSettingsOpen,
+    openModal: openSettings,
+    closeModal: closeSettings,
+  } = useModal();
   const [searchQuery, setSearchQuery] = useState("");
+  const [syncing, setSyncing] = useState(false);
+
+  async function triggerSync() {
+    setSyncing(true);
+    const result = await Admin.siriusSyncUsers();
+    setSyncing(false);
+    if (result?.success) {
+      showToast("User data sync triggered successfully.", "success", {
+        clear: true,
+      });
+    } else {
+      const parts = [];
+      if (result?.error) parts.push(result.error);
+      if (result?.status) parts.push(`HTTP ${result.status}`);
+      if (result?.responseBody) parts.push(result.responseBody);
+      showToast(
+        parts.length ? parts.join(" — ") : "Sync failed — check server logs for details.",
+        "error",
+        { clear: true }
+      );
+    }
+  }
 
   return (
     <div className="w-full h-full overflow-hidden bg-theme-bg-container flex">
@@ -46,15 +82,40 @@ export default function AdminUsers() {
                 placeholder="Search by name, username or email..."
                 className="border-none bg-theme-settings-input-bg text-theme-text-primary placeholder:text-theme-settings-input-placeholder text-sm rounded-lg outline-none px-4 py-2 flex-1 max-w-sm"
               />
-              <CTAButton onClick={openModal} className="mr-0 shrink-0">
-                <UserPlus className="h-4 w-4" weight="bold" /> Add user
-              </CTAButton>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={triggerSync}
+                  disabled={syncing}
+                  type="button"
+                  className="flex items-center gap-x-1.5 px-3 py-2 text-sm font-semibold rounded-lg border border-white/20 text-theme-text-primary hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ArrowClockwise
+                    className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`}
+                    weight="bold"
+                  />
+                  {syncing ? "Syncing..." : "Sync User Data"}
+                </button>
+                <CTAButton onClick={openModal} className="mr-0">
+                  <UserPlus className="h-4 w-4" weight="bold" /> Add user
+                </CTAButton>
+                <button
+                  onClick={openSettings}
+                  type="button"
+                  title="Sync settings"
+                  className="p-2 rounded-lg border border-white/20 text-theme-text-primary hover:bg-white/10 transition-colors"
+                >
+                  <GearSix className="h-5 w-5" weight="bold" />
+                </button>
+              </div>
             </div>
             <UsersContainer searchQuery={searchQuery} />
           </div>
         </div>
         <ModalWrapper isOpen={isOpen}>
           <NewUserModal closeModal={closeModal} />
+        </ModalWrapper>
+        <ModalWrapper isOpen={isSettingsOpen}>
+          <SyncSettingsModal closeModal={closeSettings} />
         </ModalWrapper>
       </div>
     </div>

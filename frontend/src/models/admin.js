@@ -250,6 +250,42 @@ const Admin = {
         return false;
       });
   },
+
+  // Sirius user sync
+  siriusSyncUsers: async function () {
+    return fetch(`${API_BASE}/admin/sirius/sync-users`, {
+      method: "POST",
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .catch((e) => {
+        console.error(e);
+        return { success: false, error: e.message };
+      });
+  },
+  getSiriusSettings: async function () {
+    return fetch(`${API_BASE}/admin/sirius/settings`, {
+      method: "GET",
+      headers: baseHeaders(),
+    })
+      .then((res) => res.json())
+      .catch((e) => {
+        console.error(e);
+        return { enabled: false, cron: "" };
+      });
+  },
+  updateSiriusSettings: async function (data) {
+    return fetch(`${API_BASE}/admin/sirius/settings`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify(data),
+    })
+      .then((res) => res.json())
+      .catch((e) => {
+        console.error(e);
+        return { success: false, error: e.message };
+      });
+  },
 };
 
 export default Admin;

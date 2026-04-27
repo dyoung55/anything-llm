@@ -94,6 +94,10 @@ const SystemSettings = {
 
     // Hub settings
     "hub_api_key",
+
+    // Sirius user sync
+    "sirius_sync_enabled",
+    "sirius_sync_cron",
   ],
   validations: {
     footer_data: (updates) => {
