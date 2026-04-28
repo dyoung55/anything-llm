@@ -39,6 +39,28 @@
       "type": "node"
     },
     {
+      "name": "Server debug (nodemon)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/server",
+      "runtimeExecutable": "${workspaceFolder}/server/node_modules/.bin/nodemon",
+      "runtimeArgs": [
+        "--ignore", "documents",
+        "--ignore", "vector-cache",
+        "--ignore", "storage",
+        "--ignore", "swagger",
+        "--trace-warnings"
+      ],
+      "args": ["index.js"],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "restart": true,
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
       "name": "Frontend debug",
       "request": "launch",
       "cwd": "${workspaceFolder}/frontend",
@@ -69,6 +91,16 @@
       "name": "Launch Chrome against localhost",
       "url": "http://localhost:3000",
       "webRoot": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (Server + Frontend)",
+      "configurations": ["Server debug (nodemon)", "Frontend debug"]
+    },
+    {
+      "name": "Full Stack + Collector",
+      "configurations": ["Server debug (nodemon)", "Frontend debug", "Collector debug"]
     }
   ]
 }
