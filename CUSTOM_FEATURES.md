@@ -314,6 +314,28 @@ POST /admin/sirius/settings      — Save enabled + cron, updates live Bree sche
 
 ---
 
+### 14. **Always-On RAG in Agent Mode**
+When enabled, agent mode automatically performs a vector similarity search on the workspace's embedded documents on every message — identical to how Chat mode works — and injects results into the agent's context before tool execution. This allows the agent to benefit from workspace knowledge without needing to call the `rag-memory` tool explicitly.
+
+**Field:** `workspace.agentAlwaysOnRag` (boolean, default `false`)
+
+**Behavior:**
+- Toggle is only shown in workspace Chat Settings when **Agent** mode is selected
+- When enabled, vector search fires on every message using the workspace's existing `topN`, `similarityThreshold`, and `vectorSearchMode` settings
+- Results are injected into the `<attached_documents>` context block alongside pinned docs and uploaded files
+- If no embeddings exist in the workspace namespace, the search is skipped silently
+
+**Files to Check:**
+- `server/prisma/schema.prisma` — `workspaces` model must include `agentAlwaysOnRag Boolean? @default(false)`
+- `server/models/workspace.js` — `writable` array and `validations` must include `agentAlwaysOnRag`
+- `server/utils/agents/index.js` — `AgentHandler.#fetchParsedFileContext()` performs vector search when flag is set
+- `server/utils/agents/ephemeral.js` — `EphemeralAgentHandler.#fetchParsedFileContext()` same
+- `server/utils/migrations/addAgentAlwaysOnRag.js` — boot-time `ALTER TABLE` migration
+- `server/utils/boot/index.js` — `addAgentAlwaysOnRag()` registered in both `bootHTTP` and `bootSSL`
+- `frontend/src/pages/WorkspaceSettings/ChatSettings/ChatModeSelection/index.jsx` — conditional Toggle component
+
+---
+
 ## Important Merge Conflict Patterns
 
 When merging upstream releases, watch for these patterns:

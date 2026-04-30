@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import Toggle from "@/components/lib/Toggle";
 
 export default function ChatModeSelection({ workspace, setHasChanges }) {
   const { t } = useTranslation();
   const [chatMode, setChatMode] = useState(workspace?.chatMode || "chat");
+  const [agentAlwaysOnRag, setAgentAlwaysOnRag] = useState(
+    workspace?.agentAlwaysOnRag ?? false
+  );
 
   return (
     <div>
@@ -62,6 +66,26 @@ export default function ChatModeSelection({ workspace, setHasChanges }) {
           </button>
         </div>
         <ChatModeExplanation chatMode={chatMode} />
+        {chatMode === "agent" && (
+          <div className="mt-4">
+            <input
+              type="hidden"
+              name="agentAlwaysOnRag"
+              value={String(agentAlwaysOnRag)}
+            />
+            <Toggle
+              label="Always search workspace documents"
+              description="Automatically query the workspace vector database on every message, in addition to agent tools."
+              enabled={agentAlwaysOnRag}
+              onChange={(val) => {
+                setAgentAlwaysOnRag(val);
+                setHasChanges(true);
+              }}
+              size="sm"
+              variant="horizontal"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

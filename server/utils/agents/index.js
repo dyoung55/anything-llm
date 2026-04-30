@@ -14,6 +14,7 @@ const { AgentFlows } = require("../agentFlows");
 const MCPCompatibilityLayer = require("../MCP");
 const { getAndClearInvocationAttachments } = require("../chats/agents");
 const { DocumentManager } = require("../DocumentManager");
+const { getVectorDbClass, getLLMProvider } = require("../helpers");
 
 class AgentHandler {
   #invocationUUID;
@@ -664,51 +665,85 @@ class AgentHandler {
       workspace: this.invocation.workspace,
     });
 
-    return Promise.all([
-      WorkspaceParsedFiles.getContextFiles(
-        this.invocation.workspace,
-        thread,
-        user
-      ),
-      documentManager.pinnedDocs(),
-    ])
-      .then(([parsedFiles, pinnedDocs]) => {
-        const allDocuments = [
-          ...(parsedFiles || []).map((doc) => ({
-            name: doc.title || "Uploaded Document",
-            content: doc.pageContent,
-          })),
-          ...(pinnedDocs || []).map((doc) => ({
-            name: doc.title || doc.metadata?.title || "Pinned Document",
-            content: doc.pageContent,
-          })),
-        ];
+    try {
+      const [parsedFiles, pinnedDocs] = await Promise.all([
+        WorkspaceParsedFiles.getContextFiles(
+          this.invocation.workspace,
+          thread,
+          user
+        ),
+        documentManager.pinnedDocs(),
+      ]);
 
-        if (allDocuments.length === 0) return "";
-        if (parsedFiles?.length > 0)
-          this.log(
-            `Injecting ${parsedFiles.length} parsed file(s) into user message`
-          );
-        if (pinnedDocs?.length > 0)
-          this.log(
-            `Injecting ${pinnedDocs.length} pinned document(s) into user message`
-          );
+      const allDocuments = [
+        ...(parsedFiles || []).map((doc) => ({
+          name: doc.title || "Uploaded Document",
+          content: doc.pageContent,
+        })),
+        ...(pinnedDocs || []).map((doc) => ({
+          name: doc.title || doc.metadata?.title || "Pinned Document",
+          content: doc.pageContent,
+        })),
+      ];
 
-        return (
-          "\n\n<attached_documents>\n" +
-          allDocuments
-            .map((doc, i) => {
-              const filename = doc.name || `Document ${i + 1}`;
-              return `<document name="${filename}">\n${doc.content}\n</document>`;
-            })
-            .join("\n") +
-          "\n</attached_documents>"
+      let ragInjected = false;
+      if (this.invocation.workspace.agentAlwaysOnRag) {
+        const VectorDb = getVectorDbClass();
+        const embeddingsCount = await VectorDb.namespaceCount(
+          this.invocation.workspace.slug
         );
-      })
-      .catch((e) => {
-        this.log("Error fetching parsed file context", e.message);
-        return "";
-      });
+        if (embeddingsCount > 0) {
+          const LLMConnector = getLLMProvider();
+          const { contextTexts = [] } = await VectorDb.performSimilaritySearch({
+            namespace: this.invocation.workspace.slug,
+            input: this.invocation.prompt,
+            LLMConnector,
+            similarityThreshold: this.invocation.workspace.similarityThreshold,
+            topN: this.invocation.workspace.topN,
+            rerank: this.invocation.workspace.vectorSearchMode === "rerank",
+          });
+          contextTexts.forEach((text, i) => {
+            allDocuments.push({
+              name: `Workspace Document ${i + 1}`,
+              content: text,
+            });
+          });
+          if (contextTexts.length > 0) {
+            ragInjected = true;
+            this.log(
+              `Injecting ${contextTexts.length} RAG result(s) into agent context`
+            );
+          }
+        }
+      }
+
+      if (allDocuments.length === 0) return "";
+      if (parsedFiles?.length > 0)
+        this.log(
+          `Injecting ${parsedFiles.length} parsed file(s) into user message`
+        );
+      if (pinnedDocs?.length > 0)
+        this.log(
+          `Injecting ${pinnedDocs.length} pinned document(s) into user message`
+        );
+
+      return (
+        "\n\n<attached_documents>\n" +
+        allDocuments
+          .map((doc, i) => {
+            const filename = doc.name || `Document ${i + 1}`;
+            return `<document name="${filename}">\n${doc.content}\n</document>`;
+          })
+          .join("\n") +
+        "\n</attached_documents>" +
+        (ragInjected
+          ? "\n\nIMPORTANT: The above workspace documents may only partially answer the question. If they do not contain a complete answer, you MUST use your available tools to find the remaining information before responding."
+          : "")
+      );
+    } catch (e) {
+      this.log("Error fetching parsed file context", e.message);
+      return "";
+    }
   }
 
   async createAIbitat(

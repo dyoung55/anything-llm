@@ -132,7 +132,13 @@ class WorkspaceAgentConfig {
     const config = this.getConfig(workspaceSlug);
     const enabledSkills = [];
 
-    // Process enabled skills
+    // DEFAULT_SKILLS are enabled unless explicitly disabled — mirrors agentSkillsFromSystemSettings()
+    DEFAULT_SKILLS.forEach((skill) => {
+      if (!config.disabledSkills.includes(skill))
+        enabledSkills.push(AgentPlugins[skill].name);
+    });
+
+    // Process non-default configurable skills (opt-in)
     config.enabledSkills.forEach((skillName) => {
       if (!AgentPlugins.hasOwnProperty(skillName)) return;
 

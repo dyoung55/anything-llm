@@ -58,6 +58,7 @@ const Workspace = {
     "queryRefusalResponse",
     "vectorSearchMode",
     "overrideGlobalAgentSettings",
+    "agentAlwaysOnRag",
   ],
 
   validations: {
@@ -139,6 +140,10 @@ const Workspace = {
     overrideGlobalAgentSettings: (value) => {
       if (value === null || value === undefined) return false;
       return Boolean(value);
+    },
+    agentAlwaysOnRag: (value) => {
+      if (value === null || value === undefined) return false;
+      return value === true || value === "true";
     },
   },
 

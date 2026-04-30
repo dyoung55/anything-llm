@@ -52,6 +52,7 @@
         "--trace-warnings"
       ],
       "args": ["index.js"],
+      "envFile": "${workspaceFolder}/server/.env.development",
       "env": {
         "NODE_ENV": "development"
       },
