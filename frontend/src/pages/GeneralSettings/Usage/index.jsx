@@ -21,6 +21,111 @@ import {
   YAxis,
 } from "recharts";
 
+function ChatDetailDialog({ chatId, onClose }) {
+  const [loading, setLoading] = useState(true);
+  const [detail, setDetail] = useState(null);
+
+  useEffect(() => {
+    if (!chatId) return;
+    setLoading(true);
+    System.usageAnalyticsChatDetail(chatId).then(({ detail: d, error }) => {
+      if (error) showToast(`Failed to load detail: ${error}`, "error");
+      else setDetail(d);
+      setLoading(false);
+    });
+  }, [chatId]);
+
+  if (!chatId) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <div
+        className="bg-theme-bg-secondary border border-white/10 rounded-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-theme-text-primary">Chat Detail</h3>
+          <button
+            onClick={onClose}
+            className="text-theme-text-secondary hover:text-theme-text-primary text-xl leading-none"
+          >
+            ×
+          </button>
+        </div>
+        {loading ? (
+          <p className="text-sm text-theme-text-secondary">Loading…</p>
+        ) : !detail ? (
+          <p className="text-sm text-theme-text-secondary">No detail available.</p>
+        ) : (
+          <div className="space-y-4 text-sm">
+            <div className="grid grid-cols-2 gap-2 text-theme-text-secondary">
+              <span>Workspace: <span className="text-theme-text-primary">{detail.workspaceName || "—"}</span></span>
+              <span>User: <span className="text-theme-text-primary">{detail.username || detail.externalUsernameReference || "Unassigned"}</span></span>
+              <span>Date: <span className="text-theme-text-primary">{new Date(detail.createdAt).toLocaleString()}</span></span>
+              {detail.apiKeyDescription && (
+                <span>API Key: <span className="text-theme-text-primary">{detail.apiKeyDescription}</span></span>
+              )}
+            </div>
+            <div className="flex gap-4">
+              {[
+                { label: "Input Tokens", val: detail.metrics?.prompt_tokens ?? 0 },
+                { label: "Output Tokens", val: detail.metrics?.completion_tokens ?? 0 },
+                { label: "Total Tokens", val: detail.metrics?.total_tokens ?? 0 },
+              ].map(({ label, val }) => (
+                <div key={label} className="flex-1 bg-theme-bg-primary rounded-lg p-3 text-center border border-white/10">
+                  <p className="text-xs text-theme-text-secondary">{label}</p>
+                  <p className="text-xl font-mono font-bold text-theme-text-primary">{val.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+            {detail.toolCalls?.length > 0 && (
+              <div>
+                <p className="font-semibold text-theme-text-primary mb-2">Tool Calls</p>
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 text-theme-text-secondary">
+                      <th className="py-1 pr-3">#</th>
+                      <th className="py-1 pr-3">Tool</th>
+                      <th className="py-1 pr-3 text-right">Input</th>
+                      <th className="py-1 pr-3 text-right">Output</th>
+                      <th className="py-1 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.toolCalls.map((tc) => (
+                      <tr key={tc.callOrder} className="border-b border-white/5">
+                        <td className="py-1 pr-3 text-theme-text-secondary">{tc.callOrder + 1}</td>
+                        <td className="py-1 pr-3 font-mono text-theme-text-primary">{tc.tool}</td>
+                        <td className="py-1 pr-3 text-right font-mono">{tc.promptTokens}</td>
+                        <td className="py-1 pr-3 text-right font-mono">{tc.completionTokens}</td>
+                        <td className="py-1 text-right font-mono">{tc.totalTokens}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div>
+              <p className="font-semibold text-theme-text-primary mb-1">Prompt</p>
+              <div className="bg-theme-bg-primary rounded-lg p-3 border border-white/10 text-theme-text-secondary whitespace-pre-wrap max-h-40 overflow-y-auto text-xs">
+                {detail.prompt || "—"}
+              </div>
+            </div>
+            <div>
+              <p className="font-semibold text-theme-text-primary mb-1">Response</p>
+              <div className="bg-theme-bg-primary rounded-lg p-3 border border-white/10 text-theme-text-secondary whitespace-pre-wrap max-h-48 overflow-y-auto text-xs">
+                {detail.response || "—"}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Bold, distinct colors for workspace visualization (50 colors)
 const WORKSPACE_COLORS = [
   "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8",
@@ -67,6 +172,7 @@ function UsageDashboardInner() {
   const [workspaces, setWorkspaces] = useState([]);
   const [users, setUsers] = useState([]);
   const [listsLoading, setListsLoading] = useState(true);
+  const [selectedChatId, setSelectedChatId] = useState(null);
 
   const [series, setSeries] = useState([]);
   const [totals, setTotals] = useState(null);
@@ -574,6 +680,7 @@ function UsageDashboardInner() {
                         <th className="py-2 pr-4">
                           {t("usageAnalytics.colViaApi")}
                         </th>
+                        <th className="py-2 pr-4">API Key</th>
                         <th className="py-2 pr-4">
                           {t("usageAnalytics.colTokenSource")}
                         </th>
@@ -592,7 +699,8 @@ function UsageDashboardInner() {
                       {rows.map((r) => (
                         <tr
                           key={r.id}
-                          className="border-b border-white/5 hover:bg-white/5"
+                          className="border-b border-white/5 hover:bg-white/5 cursor-pointer"
+                          onClick={() => setSelectedChatId(r.id)}
                         >
                           <td className="py-2 pr-4 whitespace-nowrap text-theme-text-primary">
                             {new Date(r.createdAt).toLocaleString()}
@@ -610,6 +718,9 @@ function UsageDashboardInner() {
                             {r.viaApi
                               ? t("usageAnalytics.yes")
                               : t("usageAnalytics.no")}
+                          </td>
+                          <td className="py-2 pr-4 text-theme-text-primary text-xs">
+                            {r.apiKeyDescription || "—"}
                           </td>
                           <td className="py-2 pr-4 text-theme-text-primary">
                             {r.tokenSource === "estimated"
@@ -673,6 +784,12 @@ function UsageDashboardInner() {
           </div>
         </div>
       </div>
+      {selectedChatId && (
+        <ChatDetailDialog
+          chatId={selectedChatId}
+          onClose={() => setSelectedChatId(null)}
+        />
+      )}
     </div>
   );
 }

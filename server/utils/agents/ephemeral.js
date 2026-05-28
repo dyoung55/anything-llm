@@ -370,7 +370,10 @@ class EphemeralAgentHandler extends AgentHandler {
       ...(useWorkspaceOverride
         ? await WorkspaceAgentConfig.getEnabledSkills(this.#workspace.slug)
         : await agentSkillsFromSystemSettings()),
-      ...ImportedPlugin.activeImportedPlugins(),
+      // When workspace override is active, imported plugins are gated via
+      // WorkspaceAgentConfig.getEnabledSkills (@@hubId entries in enabledSkills).
+      // Only fall back to all active imported plugins in global (non-override) mode.
+      ...(useWorkspaceOverride ? [] : ImportedPlugin.activeImportedPlugins()),
       ...AgentFlows.activeFlowPlugins(),
       ...mcpServers,
     ];

@@ -310,6 +310,17 @@ async function fetchUsageRows(where, limit = 20, offset = 0) {
   });
   const wsMap = new Map(workspaces.map((w) => [w.id, w]));
 
+  // Resolve API key descriptions for rows that have apiKeyId set
+  const apiKeyIds = [...new Set(rows.map((r) => r.apiKeyId).filter(Boolean))];
+  const apiKeyDescriptions = new Map();
+  if (apiKeyIds.length > 0) {
+    const apiKeys = await prisma.api_keys.findMany({
+      where: { id: { in: apiKeyIds } },
+      select: { id: true, description: true },
+    });
+    apiKeys.forEach((k) => apiKeyDescriptions.set(k.id, k.description));
+  }
+
   const mapped = rows.map((r) => {
     const ws = wsMap.get(r.workspaceId);
     const tc = tokenCountsForRow(r.prompt, r.response);
@@ -320,8 +331,9 @@ async function fetchUsageRows(where, limit = 20, offset = 0) {
       workspaceName: ws?.name ?? null,
       workspaceSlug: ws?.slug ?? null,
       userId: r.user_id,
-      username: r.users?.username ?? null,
+      username: r.users?.username ?? r.externalUsernameReference ?? null,
       viaApi: r.api_session_id != null,
+      apiKeyDescription: r.apiKeyId ? (apiKeyDescriptions.get(r.apiKeyId) ?? null) : null,
       promptTokens: tc.promptTokens,
       completionTokens: tc.completionTokens,
       totalTokens: tc.totalTokens,
@@ -414,6 +426,65 @@ async function buildUsageExportCsv(where) {
   return { csv: lines.join("\r\n") };
 }
 
+/**
+ * Fetch full detail for a single chat record, including tool calls.
+ * @param {number} chatId
+ * @returns {Promise<object|null>}
+ */
+async function fetchChatDetail(chatId) {
+  if (!chatId) return null;
+  const chat = await prisma.workspace_chats.findUnique({
+    where: { id: Number(chatId) },
+    include: { users: true, toolCalls: { orderBy: { callOrder: "asc" } } },
+  });
+  if (!chat) return null;
+
+  const workspace = await prisma.workspaces.findUnique({
+    where: { id: chat.workspaceId },
+    select: { name: true, slug: true },
+  });
+
+  let apiKeyDescription = null;
+  if (chat.apiKeyId) {
+    const apiKey = await prisma.api_keys.findUnique({
+      where: { id: chat.apiKeyId },
+      select: { description: true },
+    });
+    apiKeyDescription = apiKey?.description ?? null;
+  }
+
+  const tc = tokenCountsForRow(chat.prompt, chat.response);
+  let responseText = "";
+  try {
+    const parsed = JSON.parse(chat.response);
+    responseText = parsed?.text ?? "";
+  } catch (_) {}
+
+  return {
+    id: chat.id,
+    createdAt: chat.createdAt,
+    workspaceName: workspace?.name ?? null,
+    workspaceSlug: workspace?.slug ?? null,
+    username: chat.users?.username ?? null,
+    externalUsernameReference: chat.externalUsernameReference ?? null,
+    apiKeyDescription,
+    prompt: chat.prompt,
+    response: responseText,
+    metrics: {
+      prompt_tokens: tc.promptTokens,
+      completion_tokens: tc.completionTokens,
+      total_tokens: tc.totalTokens,
+    },
+    toolCalls: chat.toolCalls.map((tc) => ({
+      tool: tc.toolName,
+      promptTokens: tc.promptTokens,
+      completionTokens: tc.completionTokens,
+      totalTokens: tc.totalTokens,
+      callOrder: tc.callOrder,
+    })),
+  };
+}
+
 module.exports = {
   MAX_ANALYTICS_ROWS,
   buildUsageWhere,
@@ -422,4 +493,5 @@ module.exports = {
   aggregateUsageSeries,
   fetchUsageRows,
   buildUsageExportCsv,
+  fetchChatDetail,
 };

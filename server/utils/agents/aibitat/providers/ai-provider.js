@@ -93,6 +93,11 @@ class Provider {
     timestamp: null,
   };
 
+  // Tracks token deltas per LLM call so we can label them with the tool that was invoked.
+  // Each entry: { tool: string, promptTokens, completionTokens, totalTokens, callOrder }
+  _toolCallHistory = [];
+  _lastCallDelta = null; // token delta from the most recent recordUsage() call
+
   /**
    * Timestamp when the current request started (for duration calculation).
    * @type {number}
@@ -583,6 +588,34 @@ class Provider {
     this.accumulatedUsage.model = this.model; // Keep latest model
     this.accumulatedUsage.provider = this.constructor.name; // Keep latest provider
     this.accumulatedUsage.timestamp = new Date(); // Keep latest timestamp
+
+    // Store delta so it can be labeled with a tool name after the call resolves
+    this._lastCallDelta = { promptTokens, completionTokens, totalTokens: promptTokens + completionTokens };
+  }
+
+  /**
+   * Label the most recent LLM call's token delta with the tool that was invoked.
+   * Call this immediately after the tool name is known from a functionCall result.
+   * @param {string} toolName
+   */
+  labelLastCallAsTool(toolName) {
+    if (!this._lastCallDelta) return;
+    this._toolCallHistory.push({
+      tool: toolName,
+      promptTokens: this._lastCallDelta.promptTokens,
+      completionTokens: this._lastCallDelta.completionTokens,
+      totalTokens: this._lastCallDelta.totalTokens,
+      callOrder: this._toolCallHistory.length,
+    });
+    this._lastCallDelta = null;
+  }
+
+  /**
+   * Get the per-tool-call token history for this agent session.
+   * @returns {Array<{tool: string, promptTokens: number, completionTokens: number, totalTokens: number, callOrder: number}>}
+   */
+  getToolCallHistory() {
+    return [...this._toolCallHistory];
   }
 
   /**

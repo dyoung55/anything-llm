@@ -725,6 +725,21 @@ const System = {
         return { error: { error: e.message } };
       });
   },
+  usageAnalyticsChatDetail: async (chatId) => {
+    return await fetch(`${API_BASE}/system/usage-analytics/chat/${chatId}`, {
+      method: "GET",
+      headers: baseHeaders(),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        return { detail: data };
+      })
+      .catch((e) => {
+        console.error(e);
+        return { error: e.message };
+      });
+  },
   feedbackAnalytics: async (filters = {}) => {
     return await fetch(`${API_BASE}/system/feedback-analytics`, {
       method: "POST",

@@ -11,6 +11,7 @@ const { addUserProfileFields } = require("../migrations/addUserProfileFields");
 const { addApiKeyDescription } = require("../migrations/addApiKeyDescription");
 const { addFeedbackComment } = require("../migrations/addFeedbackComment");
 const { addAgentAlwaysOnRag } = require("../migrations/addAgentAlwaysOnRag");
+const { addChatEnhancements } = require("../migrations/addChatEnhancements");
 const { TelegramBotService } = require("../telegramBot");
 const MCPCompatibilityLayer = require("../MCP");
 
@@ -44,6 +45,7 @@ function bootSSL(app, port = 3001) {
       await addApiKeyDescription();
       await addFeedbackComment();
       await addAgentAlwaysOnRag();
+      await addChatEnhancements();
         new CommunicationKey(true);
         new EncryptionManager();
         new BackgroundService().boot();
@@ -88,6 +90,7 @@ function bootHTTP(app, port = 3001) {
       await addApiKeyDescription();
       await addFeedbackComment();
       await addAgentAlwaysOnRag();
+      await addChatEnhancements();
       new CommunicationKey(true);
       new EncryptionManager();
       new BackgroundService().boot();

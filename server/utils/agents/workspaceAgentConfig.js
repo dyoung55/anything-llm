@@ -140,6 +140,12 @@ class WorkspaceAgentConfig {
 
     // Process non-default configurable skills (opt-in)
     config.enabledSkills.forEach((skillName) => {
+      // Imported plugins and agent flows use @@ prefix — pass them through directly.
+      if (skillName.startsWith("@@")) {
+        enabledSkills.push(skillName);
+        return;
+      }
+
       if (!AgentPlugins.hasOwnProperty(skillName)) return;
 
       // This is a plugin module with many sub-children plugins

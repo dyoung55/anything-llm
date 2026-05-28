@@ -74,11 +74,7 @@ export default function ImportedSkillConfig({
         errors.push(`${key} is required to have a value.`);
         continue;
       }
-      if (typeof value !== settings.type) {
-        errors.push(`${key} must be of type ${settings.type}.`);
-        continue;
-      }
-      updatedConfig.setup_args[key].value = value;
+      updatedConfig.setup_args[key] = { ...settings, value };
     }
 
     if (errors.length > 0) {
@@ -86,10 +82,18 @@ export default function ImportedSkillConfig({
       return;
     }
 
-    await System.experimentalFeatures.agentPlugins.updatePluginConfig(
-      config.hubId,
-      updatedConfig
-    );
+    const success =
+      await System.experimentalFeatures.agentPlugins.updatePluginConfig(
+        config.hubId,
+        updatedConfig
+      );
+    if (!success) {
+      showToast(
+        "Failed to save skill config. Check server logs for details.",
+        "error"
+      );
+      return;
+    }
     setConfig(updatedConfig);
     setImportedSkills((prev) =>
       prev.map((skill) =>

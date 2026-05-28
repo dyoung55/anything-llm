@@ -13,6 +13,20 @@ const {
   sourceIdentifier,
 } = require("./index");
 
+function buildUsageBlock(metrics = {}, toolCalls = []) {
+  return {
+    total_tokens: metrics.total_tokens ?? 0,
+    input_tokens: metrics.prompt_tokens ?? 0,
+    output_tokens: metrics.completion_tokens ?? 0,
+    tool_calls: (toolCalls || []).map((tc) => ({
+      tool: tc.tool,
+      input_tokens: tc.promptTokens ?? 0,
+      output_tokens: tc.completionTokens ?? 0,
+      total_tokens: tc.totalTokens ?? 0,
+    })),
+  };
+}
+
 const VALID_CHAT_MODE = ["automatic", "chat", "query", "agent"];
 
 async function streamChatWithWorkspace(
@@ -298,6 +312,7 @@ async function streamChatWithWorkspace(
       error: false,
       chatId: chat.id,
       metrics,
+      usage: buildUsageBlock(metrics, []),
     });
     return;
   }
@@ -308,6 +323,7 @@ async function streamChatWithWorkspace(
     close: true,
     error: false,
     metrics,
+    usage: buildUsageBlock(metrics, []),
   });
   return;
 }

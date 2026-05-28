@@ -61,6 +61,7 @@ const {
   aggregateUsageSeries,
   fetchUsageRows,
   buildUsageExportCsv,
+  fetchChatDetail,
 } = require("../utils/workspaceUsageAnalytics");
 const {
   buildFeedbackWhere,
@@ -1458,6 +1459,25 @@ function systemEndpoints(app) {
         );
         response.setHeader("Content-Type", "text/csv; charset=utf-8");
         response.status(200).send(result.csv);
+      } catch (e) {
+        console.error(e);
+        response.sendStatus(500).end();
+      }
+    }
+  );
+
+  app.get(
+    "/system/usage-analytics/chat/:chatId",
+    usageAnalyticsMiddleware,
+    async (request, response) => {
+      try {
+        const { chatId } = request.params;
+        const detail = await fetchChatDetail(Number(chatId));
+        if (!detail) {
+          response.status(404).json({ error: "Chat not found." });
+          return;
+        }
+        response.status(200).json(detail);
       } catch (e) {
         console.error(e);
         response.sendStatus(500).end();

@@ -4,6 +4,7 @@ const { Telemetry } = require("../../../models/telemetry");
 const { DocumentVectors } = require("../../../models/vectors");
 const { Workspace } = require("../../../models/workspace");
 const { WorkspaceChats } = require("../../../models/workspaceChats");
+const { User } = require("../../../models/user");
 const { getVectorDbClass, getLLMProvider } = require("../../../utils/helpers");
 const { multiUserMode, reqBody } = require("../../../utils/http");
 const { validApiKey } = require("../../../utils/middleware/validApiKey");
@@ -654,6 +655,7 @@ function apiWorkspaceEndpoints(app) {
           sessionId = null,
           attachments = [],
           reset = false,
+          username = null,
         } = reqBody(request);
         const workspace = await Workspace.get({ slug: String(slug) });
 
@@ -687,15 +689,23 @@ function apiWorkspaceEndpoints(app) {
           return;
         }
 
+        // Resolve optional username to a user record for attribution
+        const attributedUser = username
+          ? await User.get({ username: String(username) })
+          : null;
+        const apiKeyId = response.locals.apiKey?.id ?? null;
+
         const result = await ApiChatHandler.chatSync({
           workspace,
           message,
           mode: resolvedMode,
-          user: null,
+          user: attributedUser,
           thread: null,
           sessionId: !!sessionId ? String(sessionId) : null,
           attachments,
           reset,
+          externalUsernameReference: username ? String(username) : null,
+          apiKeyId,
         });
 
         await Telemetry.sendTelemetry("sent_chat", {
@@ -809,6 +819,7 @@ function apiWorkspaceEndpoints(app) {
           sessionId = null,
           attachments = [],
           reset = false,
+          username = null,
         } = reqBody(request);
         const workspace = await Workspace.get({ slug: String(slug) });
 
@@ -842,6 +853,12 @@ function apiWorkspaceEndpoints(app) {
           return;
         }
 
+        // Resolve optional username to a user record for attribution
+        const attributedUser = username
+          ? await User.get({ username: String(username) })
+          : null;
+        const apiKeyId = response.locals.apiKey?.id ?? null;
+
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Type", "text/event-stream");
         response.setHeader("Access-Control-Allow-Origin", "*");
@@ -853,11 +870,13 @@ function apiWorkspaceEndpoints(app) {
           workspace,
           message,
           mode: resolvedMode,
-          user: null,
+          user: attributedUser,
           thread: null,
           sessionId: !!sessionId ? String(sessionId) : null,
           attachments,
           reset,
+          externalUsernameReference: username ? String(username) : null,
+          apiKeyId,
         });
         await Telemetry.sendTelemetry("sent_chat", {
           LLMSelection:
@@ -1016,6 +1035,69 @@ function apiWorkspaceEndpoints(app) {
       } catch (e) {
         console.error(e.message, e);
         response.sendStatus(500).end();
+      }
+    }
+  );
+  app.post(
+    "/v1/workspace/:slug/chat-feedback",
+    [validApiKey],
+    async (request, response) => {
+      /*
+   #swagger.tags = ['Workspaces']
+   #swagger.description = 'Submit a thumbs-up or thumbs-down rating for a chat via the developer API. Thumbs-down ratings require a non-empty feedbackComment.'
+   #swagger.requestBody = {
+       required: true,
+       content: {
+         "application/json": {
+           example: {
+             chatId: 123,
+             feedback: true,
+             feedbackComment: null
+           }
+         }
+       }
+     }
+   #swagger.responses[200] = { description: 'Rating accepted' }
+   #swagger.responses[400] = { description: 'Invalid request' }
+   #swagger.responses[403] = { "$ref": "#/definitions/InvalidAPIKey" }
+   */
+      try {
+        const { slug } = request.params;
+        const { chatId, feedback, feedbackComment = null } = reqBody(request);
+
+        if (!chatId) {
+          return response.status(400).json({ error: "chatId is required." });
+        }
+
+        // thumbs-down requires a comment
+        if (feedback === false && !feedbackComment?.trim?.()) {
+          return response.status(400).json({ error: "feedbackComment is required for thumbs-down ratings." });
+        }
+
+        const workspace = await Workspace.get({ slug: String(slug) });
+        if (!workspace) {
+          return response.status(404).json({ error: `Workspace ${slug} not found.` });
+        }
+
+        // Verify the chat belongs to this workspace
+        const chat = await WorkspaceChats.get({
+          id: Number(chatId),
+          workspaceId: workspace.id,
+        });
+        if (!chat) {
+          return response.status(404).json({ error: "Chat not found in this workspace." });
+        }
+
+        await WorkspaceChats.updateFeedbackScore(
+          chatId,
+          feedback === null ? null : feedback ? 1 : 0,
+          feedbackComment || null
+        );
+
+        return response.status(200).json({ success: true });
+      } catch (e) {
+        console.error(e.message, e);
+        response.status(500).json({ error: e.message });
       }
     }
   );

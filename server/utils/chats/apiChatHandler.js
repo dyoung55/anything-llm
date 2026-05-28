@@ -33,7 +33,28 @@ const {
  * @property {boolean} close
  * @property {string|null} error
  * @property {object} metrics
+ * @property {object} usage - standardized token usage block
  */
+
+/**
+ * Build the standardized usage block for API responses.
+ * @param {object} metrics - LLMPerformanceMonitor metrics object
+ * @param {Array} toolCalls - Per-tool-call token history from agent runs
+ * @returns {{total_tokens: number, input_tokens: number, output_tokens: number, tool_calls: Array}}
+ */
+function buildUsageBlock(metrics = {}, toolCalls = []) {
+  return {
+    total_tokens: metrics.total_tokens ?? 0,
+    input_tokens: metrics.prompt_tokens ?? 0,
+    output_tokens: metrics.completion_tokens ?? 0,
+    tool_calls: toolCalls.map((tc) => ({
+      tool: tc.tool,
+      input_tokens: tc.promptTokens ?? 0,
+      output_tokens: tc.completionTokens ?? 0,
+      total_tokens: tc.totalTokens ?? 0,
+    })),
+  };
+}
 
 /**
  * Users can pass in documents as attachments to the chat API.
@@ -135,6 +156,8 @@ async function chatSync({
   sessionId = null,
   attachments = [],
   reset = false,
+  externalUsernameReference = null,
+  apiKeyId = null,
 }) {
   const uuid = uuidv4();
   const chatMode = resolveApiChatMode(mode, workspace);
@@ -201,7 +224,7 @@ async function chatSync({
     // After this, we conclude the call as we normally do.
     return await eventListener
       .waitForClose()
-      .then(async ({ thoughts, textResponse, contentSegments }) => {
+      .then(async ({ thoughts, textResponse, contentSegments, agentUsage }) => {
         await WorkspaceChats.new({
           workspaceId: workspace.id,
           prompt: String(message),
@@ -212,9 +235,13 @@ async function chatSync({
             type: chatMode,
             thoughts,
             contentSegments,
+            metrics: agentUsage?.metrics ?? {},
           },
           include: false,
           apiSessionId: sessionId,
+          user,
+          externalUsernameReference,
+          apiKeyId,
         });
         return {
           id: uuid,
@@ -225,6 +252,7 @@ async function chatSync({
           textResponse,
           thoughts,
           contentSegments,
+          usage: buildUsageBlock(agentUsage?.metrics ?? {}, agentUsage?.toolCalls ?? []),
         };
       });
   }
@@ -258,6 +286,9 @@ async function chatSync({
       },
       include: false,
       apiSessionId: sessionId,
+      user,
+      externalUsernameReference,
+      apiKeyId,
     });
 
     return {
@@ -403,6 +434,8 @@ async function chatSync({
       include: false,
       apiSessionId: sessionId,
       user,
+      externalUsernameReference,
+      apiKeyId,
     });
 
     return {
@@ -461,6 +494,8 @@ async function chatSync({
     threadId: thread?.id || null,
     apiSessionId: sessionId,
     user,
+    externalUsernameReference,
+    apiKeyId,
   });
 
   return {
@@ -472,6 +507,7 @@ async function chatSync({
     textResponse,
     sources,
     metrics: performanceMetrics,
+    usage: buildUsageBlock(performanceMetrics, []),
   };
 }
 
@@ -500,6 +536,8 @@ async function streamChat({
   sessionId = null,
   attachments = [],
   reset = false,
+  externalUsernameReference = null,
+  apiKeyId = null,
 }) {
   const uuid = uuidv4();
   const chatMode = resolveApiChatMode(mode, workspace);
@@ -567,7 +605,7 @@ async function streamChat({
     // and stream back any results we get from agents as they come in.
     return eventListener
       .streamAgentEvents(response, uuid)
-      .then(async ({ thoughts, textResponse, contentSegments }) => {
+      .then(async ({ thoughts, textResponse, contentSegments, agentUsage }) => {
         const { chat } = await WorkspaceChats.new({
           workspaceId: workspace.id,
           prompt: String(message),
@@ -578,10 +616,14 @@ async function streamChat({
             type: chatMode,
             thoughts,
             contentSegments,
+            metrics: agentUsage?.metrics ?? {},
           },
           include: true,
           threadId: thread?.id || null,
           apiSessionId: sessionId,
+          user,
+          externalUsernameReference,
+          apiKeyId,
         });
         writeResponseChunk(response, {
           uuid,
@@ -592,6 +634,7 @@ async function streamChat({
           close: true,
           error: false,
           chatId: chat?.id,
+          usage: buildUsageBlock(agentUsage?.metrics ?? {}, agentUsage?.toolCalls ?? []),
         });
       });
   }
@@ -782,6 +825,8 @@ async function streamChat({
       apiSessionId: sessionId,
       include: false,
       user,
+      externalUsernameReference,
+      apiKeyId,
     });
     writeResponseChunk(response, {
       uuid,
@@ -856,6 +901,8 @@ async function streamChat({
       threadId: thread?.id || null,
       apiSessionId: sessionId,
       user,
+      externalUsernameReference,
+      apiKeyId,
     });
 
     writeResponseChunk(response, {
@@ -866,6 +913,7 @@ async function streamChat({
       chatId: chat?.id,
       metrics,
       sources,
+      usage: buildUsageBlock(metrics, []),
     });
     return;
   }

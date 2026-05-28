@@ -336,6 +336,131 @@ When enabled, agent mode automatically performs a vector similarity search on th
 
 ---
 
+### 15. **Per-Tool-Call Token Tracking in Agent Mode**
+In agent mode, every LLM call that selects a tool is labeled with that tool's name and its token usage is recorded individually. Token data is persisted to a new child table and surfaced through the API and Usage screen.
+
+**New DB table:** `workspace_chat_tool_calls`
+- `chatId`, `toolName`, `promptTokens`, `completionTokens`, `totalTokens`, `callOrder`, `createdAt`
+- Cascade-deleted when parent `workspace_chats` row is deleted
+
+**Mechanism:**
+- `ai-provider.js` captures a `_lastCallDelta` every time `recordUsage()` fires
+- Immediately after `completionStream.functionCall.name` is known in `aibitat/index.js`, `provider.labelLastCallAsTool(name)` moves that delta into `_toolCallHistory`
+- `getToolCallHistory()` returns the accumulated array
+- `chat-history.js` calls `WorkspaceChatToolCalls.bulkCreate(chat.id, history)` after every chat save
+- `usageMetrics` events emitted by `aibitat/index.js` now carry `toolCalls: provider.getToolCallHistory()`
+
+**Files to Check:**
+- `server/utils/agents/aibitat/providers/ai-provider.js` — `_toolCallHistory`, `_lastCallDelta`, `labelLastCallAsTool()`, `getToolCallHistory()`
+- `server/utils/agents/aibitat/index.js` — `provider.labelLastCallAsTool(name)` after each tool selection; `toolCalls` field on all `usageMetrics` event emissions
+- `server/utils/agents/aibitat/plugins/chat-history.js` — `WorkspaceChatToolCalls.bulkCreate()` call after `WorkspaceChats.new()`
+- `server/models/workspaceChatToolCalls.js` — **new** model: `bulkCreate()` and `forChat()`
+- `server/prisma/schema.prisma` — `workspace_chat_tool_calls` model + `toolCalls` relation on `workspace_chats`
+- `server/utils/migrations/addChatEnhancements.js` — creates the table and index
+
+**Database migration:** `server/utils/migrations/addChatEnhancements.js`
+
+---
+
+### 16. **Usage Screen Chat Detail Drill-Down**
+Clicking a row in the Admin Usage screen opens a detail dialog showing the full prompt, AI response, token summary, and (for agent chats) a per-tool token breakdown.
+
+**New backend endpoint:**
+```
+GET /system/usage-analytics/chat/:chatId   — admin/manager auth via usageAnalyticsMiddleware
+```
+Returns `{ id, createdAt, workspaceName, username, prompt, response, metrics, toolCalls }`.
+
+**Frontend dialog (`ChatDetailDialog`):**
+- Token summary cards (input / output / total)
+- Tool calls table (tool name, input, output, total tokens) — hidden when `toolCalls` is empty
+- Scrollable prompt and response text areas
+
+**Files to Check:**
+- `server/utils/workspaceUsageAnalytics.js` — `fetchChatDetail(chatId)` function
+- `server/endpoints/system.js` — `GET /system/usage-analytics/chat/:chatId` endpoint
+- `frontend/src/models/system.js` — `usageAnalyticsChatDetail(chatId)` API client method
+- `frontend/src/pages/GeneralSettings/Usage/index.jsx` — `ChatDetailDialog` component, row `onClick`, `selectedChatId` state
+
+---
+
+### 17. **`usage` Block in Chat API Responses**
+Both sync and streaming API endpoints append a `usage` object to their responses without changing any existing keys.
+
+**Format:**
+```json
+{
+  "usage": {
+    "total_tokens": 200,
+    "input_tokens": 150,
+    "output_tokens": 50,
+    "tool_calls": [
+      { "tool": "web_search", "input_tokens": 30, "output_tokens": 20, "total_tokens": 50 }
+    ]
+  }
+}
+```
+`tool_calls` is always present; it is an empty array for non-agent chats.
+
+**Files to Check:**
+- `server/utils/chats/apiChatHandler.js` — `buildUsageBlock()` helper; `usage` key on sync return object and stream `finalizeResponseStream` event
+- `server/utils/chats/stream.js` — `buildUsageBlock()` helper; `usage` key on both `finalizeResponseStream` paths
+- `server/utils/agents/agentMessageContent.js` — `packEphemeralAgentMessages()` captures `usageMetrics` event and returns `agentUsage: { metrics, toolCalls }`
+
+---
+
+### 18. **External Rating Endpoint**
+API-key-authenticated endpoint allowing external systems to submit a thumbs-up or thumbs-down rating (with required comment for thumbs-down) for a chat created via the API.
+
+**Endpoint:**
+```
+POST /v1/workspace/:slug/chat-feedback
+Authorization: Bearer <api-key>
+```
+
+**Request body:**
+```json
+{ "chatId": 123, "feedback": true, "feedbackComment": null }
+```
+- `feedback: false` requires a non-empty `feedbackComment` (returns 400 otherwise)
+- `feedback: null` clears the rating and comment
+- Validates that `chatId` belongs to the workspace identified by `:slug`
+- Calls existing `WorkspaceChats.updateFeedbackScore(chatId, score, comment)`
+
+**Files to Check:**
+- `server/endpoints/api/workspace/index.js` — `POST /v1/workspace/:slug/chat-feedback` route
+
+---
+
+### 19. **API Chat Attribution (`username`, `externalUsernameReference`, `apiKeyId`)**
+API chat endpoints accept an optional `username` parameter for attribution. The chat can be credited to a real user (`user_id`) while still being excluded from that user's interactive thread UI.
+
+**New DB columns on `workspace_chats`:**
+| Column | Type | Purpose |
+|---|---|---|
+| `externalUsernameReference` | `String?` | Raw username string sent by the API caller |
+| `apiKeyId` | `Int?` | FK to `api_keys.id` — which API key created this chat |
+
+**Behavior:**
+- If `username` resolves to a real user, `user_id` is set so Usage analytics attributes the chat correctly
+- `externalUsernameReference` is always written with the raw string regardless of resolution
+- `apiKeyId` is set from `response.locals.apiKey.id` (exposed by `validApiKey` middleware)
+- Chats still have `api_session_id` set, so they are filtered out of all frontend thread queries (`forWorkspace()` and `forWorkspaceByUser()` both filter `api_session_id: null`)
+
+**Usage screen:** The Usage rows table shows an "API Key" column with the API key's description when `apiKeyId` is set.
+
+**Files to Check:**
+- `server/prisma/schema.prisma` — `externalUsernameReference String?` and `apiKeyId Int?` on `workspace_chats`; `api_keys` relation
+- `server/models/workspaceChats.js` — `new()` accepts `externalUsernameReference` and `apiKeyId`
+- `server/utils/middleware/validApiKey.js` — exposes `response.locals.apiKey` (the full record)
+- `server/endpoints/api/workspace/index.js` — extracts `username`, resolves user, extracts `apiKeyId`, passes both to handlers
+- `server/utils/chats/apiChatHandler.js` — `chatSync()` and `streamChat()` accept and thread `externalUsernameReference` + `apiKeyId` through to `WorkspaceChats.new()`
+- `server/utils/workspaceUsageAnalytics.js` — `fetchUsageRows()` joins `api_keys` for description; includes `apiKeyDescription` in row output
+- `frontend/src/pages/GeneralSettings/Usage/index.jsx` — "API Key" column in usage table
+- Database migration: `server/utils/migrations/addChatEnhancements.js` — `ALTER TABLE workspace_chats ADD COLUMN externalUsernameReference TEXT` and `ADD COLUMN apiKeyId INTEGER`
+
+---
+
 ## Important Merge Conflict Patterns
 
 When merging upstream releases, watch for these patterns:
@@ -393,6 +518,9 @@ Custom migrations that must run on every instance:
 3. `migrateWorkspaceChatApiKey.js` — Add chatApiKey field to workspace
 4. `addUserProfileFields.js` — Add fullName, email, language, timezone to users table
 5. `addApiKeyDescription.js` — Add description column to api_keys table
+6. `addFeedbackComment.js` — Add feedbackComment column to workspace_chats
+7. `addAgentAlwaysOnRag.js` — Add agentAlwaysOnRag column to workspaces
+8. `addChatEnhancements.js` — Add externalUsernameReference + apiKeyId to workspace_chats; create workspace_chat_tool_calls table
 
 These run automatically via `server/utils/boot/index.js` during startup.
 
@@ -421,6 +549,15 @@ After merging upstream:
 - [ ] API key description can be set at creation time and appears in the table
 - [ ] Existing keys without description show "—" in the description column
 - [ ] Description can be edited inline via pencil icon; saves on Enter or ✓ button
+- [ ] Agent-mode chat with 2+ tool calls produces rows in `workspace_chat_tool_calls` with correct tool names and non-zero token counts
+- [ ] Usage screen row click opens detail dialog with prompt, response, token summary, and tool calls table
+- [ ] `POST /v1/workspace/:slug/chat` JSON response includes `usage.input_tokens`, `usage.output_tokens`, `usage.tool_calls`
+- [ ] `POST /v1/workspace/:slug/stream-chat` terminal SSE event (`finalizeResponseStream`) includes `usage` field
+- [ ] `POST /v1/workspace/:slug/chat-feedback` with `feedback: false` and empty comment returns 400
+- [ ] `POST /v1/workspace/:slug/chat-feedback` with valid thumbs-down + comment returns 200 and updates DB
+- [ ] API chat with `username: "existing_user"` stores chat with that user's `user_id` but chat does NOT appear in user's thread UI
+- [ ] `externalUsernameReference` column is written even when username does not match a real user
+- [ ] Usage screen shows "API Key" column with the key's description for API-created chats
 
 ---
 

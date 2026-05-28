@@ -1,4 +1,5 @@
 const { WorkspaceChats } = require("../../../../models/workspaceChats");
+const { WorkspaceChatToolCalls } = require("../../../../models/workspaceChatToolCalls");
 const {
   packAgentContentToPlainText,
 } = require("../../agentMessageContent");
@@ -72,6 +73,10 @@ const chatHistory = {
           user: { id: invocation?.user_id || null },
           threadId: invocation?.thread_id || null,
         });
+        const toolCallHistory = aibitat.provider?.getToolCallHistory?.() ?? [];
+        if (chat?.id && toolCallHistory.length > 0) {
+          await WorkspaceChatToolCalls.bulkCreate(chat.id, toolCallHistory);
+        }
         if (chat?.id && aibitat._lastAssistantStreamUuid) {
           aibitat.socket?.send?.("reportStreamEvent", {
             type: "chatPersisted",
@@ -110,6 +115,10 @@ const chatHistory = {
           user: { id: invocation?.user_id || null },
           threadId: invocation?.thread_id || null,
         });
+        const toolCallHistorySpecial = aibitat.provider?.getToolCallHistory?.() ?? [];
+        if (chat?.id && toolCallHistorySpecial.length > 0) {
+          await WorkspaceChatToolCalls.bulkCreate(chat.id, toolCallHistorySpecial);
+        }
         if (chat?.id && aibitat._lastAssistantStreamUuid) {
           aibitat.socket?.send?.("reportStreamEvent", {
             type: "chatPersisted",

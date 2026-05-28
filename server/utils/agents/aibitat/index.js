@@ -882,6 +882,8 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
       }
 
       const { name, arguments: args } = completionStream.functionCall;
+      // Label the LLM call that produced this tool selection with the tool name for token attribution
+      provider.labelLastCallAsTool?.(name);
       const fn = this.functions.get(name);
 
       if (!fn) {
@@ -942,6 +944,7 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
           type: "usageMetrics",
           uuid: directOutputUUID,
           metrics: provider.getUsage(),
+          toolCalls: provider.getToolCallHistory?.() ?? [],
         });
         this?.flushCitations?.(directOutputUUID);
         this._lastAssistantStreamUuid = directOutputUUID;
@@ -984,6 +987,7 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
       type: "usageMetrics",
       uuid: responseUuid,
       metrics: provider.getUsage(),
+      toolCalls: provider.getToolCallHistory?.() ?? [],
     });
     this?.flushCitations?.(responseUuid);
     this._lastAssistantStreamUuid = responseUuid;
@@ -1058,6 +1062,7 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
           type: "usageMetrics",
           uuid: msgUUID,
           metrics: provider.getUsage(),
+          toolCalls: provider.getToolCallHistory?.() ?? [],
         });
         this?.flushCitations?.(msgUUID);
         this._lastAssistantStreamUuid = msgUUID;
@@ -1068,6 +1073,8 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
       }
 
       const { name, arguments: args } = completion.functionCall;
+      // Label the LLM call that produced this tool selection with the tool name for token attribution
+      provider.labelLastCallAsTool?.(name);
       const fn = this.functions.get(name);
 
       if (!fn) {
@@ -1117,6 +1124,7 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
           type: "usageMetrics",
           uuid: msgUUID,
           metrics: provider.getUsage(),
+          toolCalls: provider.getToolCallHistory?.() ?? [],
         });
         this?.flushCitations?.(msgUUID);
         this._lastAssistantStreamUuid = msgUUID;
@@ -1159,6 +1167,7 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
       type: "usageMetrics",
       uuid: msgUUID,
       metrics: provider.getUsage(),
+      toolCalls: provider.getToolCallHistory?.() ?? [],
     });
     this?.flushCitations?.(msgUUID);
     this._lastAssistantStreamUuid = msgUUID;

@@ -86,7 +86,19 @@ This fork tracks local modifications in `CUSTOM_FEATURES.md`. Key additions over
 4. **Saved prompt templates** — Reusable prompt templates stored per workspace
 5. **Per-workspace MCP server toggles** — Individual MCP servers can be suppressed per workspace
 6. **Custom branding** — Banner text, theme colors, custom logo assets
-7. **Usage statistics dashboard** — Admin analytics via `server/endpoints/admin.js`
+7. **Usage statistics dashboard** — Admin analytics via `server/utils/workspaceUsageAnalytics.js` + `server/endpoints/system.js`
+8. **Anthropic max tokens per model** — Per-model token limit map in `server/utils/agents/aibitat/providers/anthropic.js`
+9. **Anthropic tool-call limit fix** — Strips dangling `tool_use` blocks before the final API call to avoid 400 errors
+10. **Extended user profile fields** — `fullName`, `email`, `language`, `timezone` on the User model; exposed as system prompt variables
+11. **API key descriptions** — Optional label on each API key; editable inline in the UI
+12. **Thumbs-down feedback + analytics** — Required comment on negative ratings; admin feedback dashboard at `/settings/feedback`
+13. **Sirius user sync** — Admin-triggered or scheduled sync of users from the Sirius external API (Bree job)
+14. **Always-on RAG in agent mode** — `workspace.agentAlwaysOnRag` performs vector search on every agent message and injects results into context
+15. **Per-tool-call token tracking** — Agent LLM calls are labeled by tool name and stored in `workspace_chat_tool_calls`
+16. **Usage screen chat detail drill-down** — Row click opens a dialog with prompt, response, token summary, and per-tool breakdown
+17. **`usage` block in API chat responses** — Both sync and streaming endpoints append `{ usage: { input_tokens, output_tokens, tool_calls } }`
+18. **External rating endpoint** — `POST /v1/workspace/:slug/chat-feedback` (API-key auth) for thumbs-up/down from external systems
+19. **API chat attribution** — `username`, `externalUsernameReference`, and `apiKeyId` on `workspace_chats` for API-created chats
 
 When pulling upstream changes, check `CUSTOM_FEATURES.md` to ensure these are preserved.
 
@@ -102,6 +114,8 @@ When pulling upstream changes, check `CUSTOM_FEATURES.md` to ensure these are pr
 | Database schema change | Edit `server/prisma/schema.prisma` → `yarn prisma:migrate` → update `server/models/` CRUD file |
 | Add workspace setting | Schema migration + `server/models/workspace.js` + frontend settings panel |
 | Frontend API calls | `frontend/src/models/` — one file per resource type |
+| Modify usage analytics | `server/utils/workspaceUsageAnalytics.js` + `server/endpoints/system.js` + `frontend/src/pages/GeneralSettings/Usage/` |
+| Add a boot-time migration | `server/utils/migrations/<name>.js` → register in `server/utils/boot/index.js` (both `bootHTTP` and `bootSSL`) |
 
 ## Environment
 

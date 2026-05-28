@@ -38,6 +38,11 @@ function importedAgentPluginEndpoints(app) {
           hubId,
           updates
         );
+        if (!updatedConfig) {
+          return response
+            .status(500)
+            .json({ error: "Failed to update plugin config." });
+        }
         response.status(200).json(updatedConfig);
       } catch (e) {
         console.error(e);

@@ -79,6 +79,7 @@ function packEphemeralAgentMessages(messages) {
   const segments = [];
   let textBuffer = "";
   let activeTextUuid = null;
+  let agentUsage = null; // Captured from usageMetrics event
 
   const flushText = () => {
     if (textBuffer.length > 0) {
@@ -148,6 +149,10 @@ function packEphemeralAgentMessages(messages) {
         if (t) segments.push({ kind: "text", text: t });
         continue;
       }
+      if (ev.type === "usageMetrics") {
+        agentUsage = { metrics: ev.metrics ?? {}, toolCalls: ev.toolCalls ?? [] };
+        continue;
+      }
       continue;
     }
 
@@ -183,7 +188,7 @@ function packEphemeralAgentMessages(messages) {
   const textResponse =
     narrativeParts.length > 0 ? narrativeParts.join("\n\n") : null;
 
-  return { thoughts, textResponse, contentSegments: segments };
+  return { thoughts, textResponse, contentSegments: segments, agentUsage };
 }
 
 module.exports = {

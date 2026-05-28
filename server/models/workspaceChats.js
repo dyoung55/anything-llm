@@ -10,6 +10,8 @@ const WorkspaceChats = {
     threadId = null,
     include = true,
     apiSessionId = null,
+    externalUsernameReference = null,
+    apiKeyId = null,
   }) {
     try {
       const chat = await prisma.workspace_chats.create({
@@ -21,6 +23,8 @@ const WorkspaceChats = {
           thread_id: threadId,
           api_session_id: apiSessionId,
           include,
+          externalUsernameReference: externalUsernameReference || null,
+          apiKeyId: apiKeyId ? Number(apiKeyId) : null,
         },
       });
       return { chat, message: null };

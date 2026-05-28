@@ -2536,6 +2536,54 @@
         }
       }
     },
+    "/v1/workspace/{slug}/chat-feedback": {
+      "post": {
+        "tags": [
+          "Workspaces"
+        ],
+        "description": "Submit a thumbs-up or thumbs-down rating for a chat via the developer API. Thumbs-down ratings require a non-empty feedbackComment.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rating accepted"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "403": {
+            "description": "Forbidden",
+            "$ref": "#/components/schemas/InvalidAPIKey"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "chatId": 123,
+                "feedback": true,
+                "feedbackComment": null
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/system/env-dump": {
       "get": {
         "tags": [
