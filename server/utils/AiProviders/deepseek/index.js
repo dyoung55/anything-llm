@@ -12,8 +12,7 @@ const {
 class DeepSeekLLM {
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const apiKey = apiKeyOverride || process.env.DEEPSEEK_API_KEY;
-    if (!apiKey)
-      throw new Error("No DeepSeek API key was set.");
+    if (!apiKey) throw new Error("No DeepSeek API key was set.");
     this.className = "DeepSeekLLM";
     const { OpenAI: OpenAIApi } = require("openai");
 

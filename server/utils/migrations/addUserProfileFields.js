@@ -5,15 +5,14 @@ const path = require("path");
 const migrationFlagPath =
   process.env.NODE_ENV === "development"
     ? path.resolve(__dirname, "../../storage/.user-profile-fields-migrated")
-    : path.resolve(
-        process.env.STORAGE_DIR,
-        ".user-profile-fields-migrated"
-      );
+    : path.resolve(process.env.STORAGE_DIR, ".user-profile-fields-migrated");
 
 async function addUserProfileFields() {
   if (fs.existsSync(migrationFlagPath)) return;
 
-  console.log("[Migration] Adding user profile fields (fullName, email, language, timezone)...");
+  console.log(
+    "[Migration] Adding user profile fields (fullName, email, language, timezone)..."
+  );
   const columns = [
     ["fullName", "TEXT"],
     ["email", "TEXT"],

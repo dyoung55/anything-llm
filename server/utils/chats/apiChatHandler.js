@@ -181,6 +181,7 @@ async function chatSync({
         close: true,
         error: null,
         metrics: {},
+        usage: buildUsageBlock({}, []),
       };
     }
   }
@@ -252,7 +253,10 @@ async function chatSync({
           textResponse,
           thoughts,
           contentSegments,
-          usage: buildUsageBlock(agentUsage?.metrics ?? {}, agentUsage?.toolCalls ?? []),
+          usage: buildUsageBlock(
+            agentUsage?.metrics ?? {},
+            agentUsage?.toolCalls ?? []
+          ),
         };
       });
   }
@@ -299,6 +303,7 @@ async function chatSync({
       error: null,
       textResponse,
       metrics: {},
+      usage: buildUsageBlock({}, []),
     };
   }
 
@@ -392,6 +397,7 @@ async function chatSync({
       close: true,
       error: vectorSearchResults.message,
       metrics: {},
+      usage: buildUsageBlock({}, []),
     };
   }
 
@@ -446,6 +452,7 @@ async function chatSync({
       error: null,
       textResponse,
       metrics: {},
+      usage: buildUsageBlock({}, []),
     };
   }
 
@@ -478,6 +485,7 @@ async function chatSync({
       close: true,
       error: "No text completion could be completed with this input.",
       metrics: performanceMetrics,
+      usage: buildUsageBlock(performanceMetrics, []),
     };
   }
 
@@ -562,6 +570,7 @@ async function streamChat({
         close: true,
         error: null,
         metrics: {},
+        usage: buildUsageBlock({}, []),
       });
       return;
     }
@@ -634,7 +643,10 @@ async function streamChat({
           close: true,
           error: false,
           chatId: chat?.id,
-          usage: buildUsageBlock(agentUsage?.metrics ?? {}, agentUsage?.toolCalls ?? []),
+          usage: buildUsageBlock(
+            agentUsage?.metrics ?? {},
+            agentUsage?.toolCalls ?? []
+          ),
         });
       });
   }
@@ -681,6 +693,7 @@ async function streamChat({
       error: null,
       metrics: {},
       chatId: chat?.id,
+      usage: buildUsageBlock({}, []),
     });
     return;
   }
@@ -783,6 +796,7 @@ async function streamChat({
       close: true,
       error: vectorSearchResults.message,
       metrics: {},
+      usage: buildUsageBlock({}, []),
     });
     return;
   }
@@ -837,6 +851,7 @@ async function streamChat({
       error: null,
       metrics: {},
       chatId: chat?.id,
+      usage: buildUsageBlock({}, []),
     });
     return;
   }
@@ -876,15 +891,23 @@ async function streamChat({
       close: true,
       error: false,
       metrics,
+      usage: buildUsageBlock(metrics, []),
     });
   } else {
     const stream = await LLMConnector.streamGetChatCompletion(messages, {
       temperature: workspace?.openAiTemp ?? LLMConnector.defaultTemp,
       user: user,
     });
-    completeText = await LLMConnector.handleStream(response, stream, { uuid, sources });
+    completeText = await LLMConnector.handleStream(response, stream, {
+      uuid,
+      sources,
+    });
     // Use stream metrics, or fallback to provider's getUsage() method
-    metrics = stream.metrics || (typeof LLMConnector.getUsage === 'function' ? LLMConnector.getUsage() : {});
+    metrics =
+      stream.metrics ||
+      (typeof LLMConnector.getUsage === "function"
+        ? LLMConnector.getUsage()
+        : {});
   }
 
   if (completeText?.length > 0) {
@@ -923,6 +946,7 @@ async function streamChat({
     type: "finalizeResponseStream",
     close: true,
     error: false,
+    usage: buildUsageBlock({}, []),
   });
   return;
 }

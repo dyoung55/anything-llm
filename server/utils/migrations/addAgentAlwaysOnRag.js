@@ -5,10 +5,7 @@ const path = require("path");
 const migrationFlagPath =
   process.env.NODE_ENV === "development"
     ? path.resolve(__dirname, "../../storage/.agent-always-on-rag-migrated")
-    : path.resolve(
-        process.env.STORAGE_DIR,
-        ".agent-always-on-rag-migrated"
-      );
+    : path.resolve(process.env.STORAGE_DIR, ".agent-always-on-rag-migrated");
 
 async function addAgentAlwaysOnRag() {
   if (fs.existsSync(migrationFlagPath)) return;

@@ -184,7 +184,9 @@ module.exports.CreateDocxFile = {
                 forDarkBackground: isDarkBg,
                 format: "buffer",
               });
-              const logoDimensions = logoBuffer ? createFilesLib.getPngDimensions(logoBuffer) : null;
+              const logoDimensions = logoBuffer
+                ? createFilesLib.getPngDimensions(logoBuffer)
+                : null;
 
               const docElements = await htmlToDocxElements(
                 html,
@@ -238,7 +240,12 @@ module.exports.CreateDocxFile = {
                     ),
                   },
                   footers: {
-                    default: createRunningFooter(docx, logoBuffer, themeColors, logoDimensions),
+                    default: createRunningFooter(
+                      docx,
+                      logoBuffer,
+                      themeColors,
+                      logoDimensions
+                    ),
                   },
                 });
               } else {
@@ -250,7 +257,12 @@ module.exports.CreateDocxFile = {
                   },
                   children: docElements,
                   footers: {
-                    default: createRunningFooter(docx, logoBuffer, themeColors, logoDimensions),
+                    default: createRunningFooter(
+                      docx,
+                      logoBuffer,
+                      themeColors,
+                      logoDimensions
+                    ),
                   },
                 });
               }

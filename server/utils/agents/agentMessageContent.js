@@ -150,7 +150,10 @@ function packEphemeralAgentMessages(messages) {
         continue;
       }
       if (ev.type === "usageMetrics") {
-        agentUsage = { metrics: ev.metrics ?? {}, toolCalls: ev.toolCalls ?? [] };
+        agentUsage = {
+          metrics: ev.metrics ?? {},
+          toolCalls: ev.toolCalls ?? [],
+        };
         continue;
       }
       continue;

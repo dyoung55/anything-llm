@@ -19,26 +19,30 @@ class MCPCompatibilityLayer extends MCPHypervisor {
   async activeMCPServers(workspaceSlug = null) {
     // Boot all global servers
     await this.bootMCPServers();
-    
-    const globalServerNames = this.mcpServerConfigs.map(s => s.name);
-    
+
+    const globalServerNames = this.mcpServerConfigs.map((s) => s.name);
+
     // If no workspace slug, return all global servers
     if (!workspaceSlug) {
       return Object.keys(this.mcps)
-        .filter(name => globalServerNames.includes(name))
-        .map(name => `@@mcp_${name}`);
+        .filter((name) => globalServerNames.includes(name))
+        .map((name) => `@@mcp_${name}`);
     }
 
     // Get enabled servers for this workspace
-    const enabledServers = WorkspaceAgentConfig.getEnabledMcpServers(workspaceSlug);
-    
+    const enabledServers =
+      WorkspaceAgentConfig.getEnabledMcpServers(workspaceSlug);
+
     // Only return servers that are:
     // 1. In the global config
     // 2. Currently running
     // 3. Enabled for this workspace
     return Object.keys(this.mcps)
-      .filter(name => globalServerNames.includes(name) && enabledServers.includes(name))
-      .map(name => `@@mcp_${name}`);
+      .filter(
+        (name) =>
+          globalServerNames.includes(name) && enabledServers.includes(name)
+      )
+      .map((name) => `@@mcp_${name}`);
   }
 
   /**
@@ -47,10 +51,11 @@ class MCPCompatibilityLayer extends MCPHypervisor {
    * @returns {Array<{name: string, server: Object, source: 'workspace'}>} - Filtered server configs with workspace source
    */
   getMergedMCPServers(workspaceSlug) {
-    const enabledServers = WorkspaceAgentConfig.getEnabledMcpServers(workspaceSlug);
+    const enabledServers =
+      WorkspaceAgentConfig.getEnabledMcpServers(workspaceSlug);
     return this.mcpServerConfigs
-      .filter(s => enabledServers.includes(s.name))
-      .map(s => ({ ...s, source: 'workspace' }));
+      .filter((s) => enabledServers.includes(s.name))
+      .map((s) => ({ ...s, source: "workspace" }));
   }
 
   /**
@@ -249,7 +254,7 @@ class MCPCompatibilityLayer extends MCPHypervisor {
       // Get merged servers if workspace slug provided
       const serverConfigs = workspaceSlug
         ? this.getMergedMCPServers(workspaceSlug)
-        : this.mcpServerConfigs.map(s => ({ ...s, source: 'global' }));
+        : this.mcpServerConfigs.map((s) => ({ ...s, source: "global" }));
 
       for (const serverConfig of serverConfigs) {
         try {
@@ -264,7 +269,7 @@ class MCPCompatibilityLayer extends MCPHypervisor {
               tools: [],
               error: result.message,
               process: null,
-              source: serverConfig.source || 'global',
+              source: serverConfig.source || "global",
             });
             continue;
           }
@@ -279,7 +284,7 @@ class MCPCompatibilityLayer extends MCPHypervisor {
               tools: [],
               error: null,
               process: null,
-              source: serverConfig.source || 'global',
+              source: serverConfig.source || "global",
             });
             continue;
           }
@@ -298,15 +303,23 @@ class MCPCompatibilityLayer extends MCPHypervisor {
               try {
                 const toolsPromise = mcp.listTools();
                 const toolsTimeoutPromise = new Promise((_, reject) =>
-                  setTimeout(() => reject(new Error("List tools timeout")), 2000)
+                  setTimeout(
+                    () => reject(new Error("List tools timeout")),
+                    2000
+                  )
                 );
-                const toolsResult = await Promise.race([toolsPromise, toolsTimeoutPromise]);
+                const toolsResult = await Promise.race([
+                  toolsPromise,
+                  toolsTimeoutPromise,
+                ]);
                 tools = (toolsResult.tools || []).filter(
                   (tool) => !tool.name.startsWith("handle_mcp_connection_mcp_")
                 );
               } catch (toolError) {
                 // If tool listing times out or fails, just continue without tools
-                this.log(`Failed to list tools for ${name}: ${toolError.message}`);
+                this.log(
+                  `Failed to list tools for ${name}: ${toolError.message}`
+                );
                 tools = [];
               }
             }
@@ -324,7 +337,7 @@ class MCPCompatibilityLayer extends MCPHypervisor {
             process: {
               pid: mcp.transport?.process?.pid || null,
             },
-            source: serverConfig.source || 'global',
+            source: serverConfig.source || "global",
           });
         } catch (serverError) {
           // If processing a single server fails, log it and continue with others
@@ -336,7 +349,7 @@ class MCPCompatibilityLayer extends MCPHypervisor {
             tools: [],
             error: `Error checking server status: ${serverError.message}`,
             process: null,
-            source: serverConfig.source || 'global',
+            source: serverConfig.source || "global",
           });
         }
       }

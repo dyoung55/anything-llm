@@ -590,7 +590,11 @@ class Provider {
     this.accumulatedUsage.timestamp = new Date(); // Keep latest timestamp
 
     // Store delta so it can be labeled with a tool name after the call resolves
-    this._lastCallDelta = { promptTokens, completionTokens, totalTokens: promptTokens + completionTokens };
+    this._lastCallDelta = {
+      promptTokens,
+      completionTokens,
+      totalTokens: promptTokens + completionTokens,
+    };
   }
 
   /**

@@ -87,8 +87,7 @@ const User = {
     email: (v = null) => {
       if (!v) return null;
       const s = String(v);
-      if (s.length > 254)
-        throw new Error("Email cannot exceed 254 characters");
+      if (s.length > 254) throw new Error("Email cannot exceed 254 characters");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
         throw new Error("Invalid email format");
       return s;

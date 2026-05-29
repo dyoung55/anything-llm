@@ -15,12 +15,7 @@ function isDarkColor(hexColor) {
 
 async function addBranding(slide, bgColor, options = {}) {
   const isDark = isDarkColor(bgColor);
-  const {
-    x = 8.7,
-    y = 5.22,
-    height = 0.3,
-    transparency = 50,
-  } = options;
+  const { x = 8.7, y = 5.22, height = 0.3, transparency = 50 } = options;
 
   // Get logo as buffer first to extract dimensions
   const logoBuffer = await createFilesLib.getLogo({
@@ -31,7 +26,9 @@ async function addBranding(slide, bgColor, options = {}) {
   if (!logoBuffer) return;
 
   const logoDimensions = createFilesLib.getPngDimensions(logoBuffer);
-  console.log(`[PPTX addBranding] isDark=${isDark}, logo found, dimensions=${logoDimensions ? `${logoDimensions.width}x${logoDimensions.height}` : "unknown"}`);
+  console.log(
+    `[PPTX addBranding] isDark=${isDark}, logo found, dimensions=${logoDimensions ? `${logoDimensions.width}x${logoDimensions.height}` : "unknown"}`
+  );
 
   // Get logo as data URI
   const logoDataUri = await createFilesLib.getLogo({

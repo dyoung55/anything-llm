@@ -151,7 +151,8 @@ const THEMES = {
 
   mcsw: {
     name: "MCSW",
-    description: "MCSW brand theme — professional with company blue and red accent",
+    description:
+      "MCSW brand theme — professional with company blue and red accent",
 
     titleSlideBackground: "022846",
     titleSlideTitleColor: "FFFFFF",

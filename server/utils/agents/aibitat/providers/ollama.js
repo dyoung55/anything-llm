@@ -25,9 +25,7 @@ class OllamaProvider extends InheritMultiple([Provider, UnTooled]) {
     super();
     const authToken = apiKey ?? process.env.OLLAMA_AUTH_TOKEN;
     const basePath = process.env.OLLAMA_BASE_PATH;
-    const headers = authToken
-      ? { Authorization: `Bearer ${authToken}` }
-      : {};
+    const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
     this._client = new Ollama({
       host: basePath,
       headers: headers,

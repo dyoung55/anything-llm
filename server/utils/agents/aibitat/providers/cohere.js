@@ -13,8 +13,10 @@ class CohereProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = process.env.COHERE_MODEL_PREF || "command-r-08-2024", apiKey = null } =
-      config;
+    const {
+      model = process.env.COHERE_MODEL_PREF || "command-r-08-2024",
+      apiKey = null,
+    } = config;
     super();
     const client = new CohereClientV2({
       token: apiKey ?? process.env.COHERE_API_KEY,

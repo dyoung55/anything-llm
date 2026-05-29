@@ -54,7 +54,10 @@ async function grepAgents({
   const agentHandles = WorkspaceAgentInvocation.parseAgents(message);
   // If workspace is in agent mode, always invoke agent regardless of @agent prefix
   // Also invoke if nativeToolingEnabled (automatic mode with provider support)
-  const shouldInvokeAgent = agentHandles.length > 0 || workspace?.chatMode === "agent" || nativeToolingEnabled;
+  const shouldInvokeAgent =
+    agentHandles.length > 0 ||
+    workspace?.chatMode === "agent" ||
+    nativeToolingEnabled;
 
   if (shouldInvokeAgent) {
     const { invocation: newInvocation } = await WorkspaceAgentInvocation.new({

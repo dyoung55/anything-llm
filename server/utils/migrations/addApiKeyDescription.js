@@ -5,10 +5,7 @@ const path = require("path");
 const migrationFlagPath =
   process.env.NODE_ENV === "development"
     ? path.resolve(__dirname, "../../storage/.api-key-description-migrated")
-    : path.resolve(
-        process.env.STORAGE_DIR,
-        ".api-key-description-migrated"
-      );
+    : path.resolve(process.env.STORAGE_DIR, ".api-key-description-migrated");
 
 async function addApiKeyDescription() {
   if (fs.existsSync(migrationFlagPath)) return;

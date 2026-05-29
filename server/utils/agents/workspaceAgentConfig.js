@@ -8,7 +8,11 @@ const AgentPlugins = require("./aibitat/plugins");
 const workspaceAgentConfigPath =
   process.env.NODE_ENV === "development"
     ? path.resolve(__dirname, "../../storage/plugins/workspace-agent-config")
-    : path.resolve(process.env.STORAGE_DIR, "plugins", "workspace-agent-config");
+    : path.resolve(
+        process.env.STORAGE_DIR,
+        "plugins",
+        "workspace-agent-config"
+      );
 
 const DEFAULT_SKILLS = [
   AgentPlugins.memory.name,

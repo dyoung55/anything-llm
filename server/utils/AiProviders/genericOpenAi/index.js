@@ -21,7 +21,8 @@ class GenericOpenAiLLM {
 
     this.className = "GenericOpenAiLLM";
     this.basePath = process.env.GENERIC_OPEN_AI_BASE_PATH;
-    const apiKey = apiKeyOverride ?? process.env.GENERIC_OPEN_AI_API_KEY ?? null;
+    const apiKey =
+      apiKeyOverride ?? process.env.GENERIC_OPEN_AI_API_KEY ?? null;
     this.openai = new OpenAIApi({
       baseURL: this.basePath,
       apiKey: apiKey,

@@ -80,8 +80,7 @@ async function togetherAiModels(apiKey = null) {
 class TogetherAiLLM {
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const apiKey = apiKeyOverride || process.env.TOGETHER_AI_API_KEY;
-    if (!apiKey)
-      throw new Error("No TogetherAI API key was set.");
+    if (!apiKey) throw new Error("No TogetherAI API key was set.");
     const { OpenAI: OpenAIApi } = require("openai");
     this.className = "TogetherAiLLM";
     this.openai = new OpenAIApi({

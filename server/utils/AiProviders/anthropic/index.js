@@ -14,8 +14,7 @@ const { getAnythingLLMUserAgent } = require("../../../endpoints/utils");
 class AnthropicLLM {
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const apiKey = apiKeyOverride || process.env.ANTHROPIC_API_KEY;
-    if (!apiKey)
-      throw new Error("No Anthropic API key was set.");
+    if (!apiKey) throw new Error("No Anthropic API key was set.");
 
     this.className = "AnthropicLLM";
     // Docs: https://www.npmjs.com/package/@anthropic-ai/sdk

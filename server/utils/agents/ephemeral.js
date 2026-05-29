@@ -361,7 +361,8 @@ class EphemeralAgentHandler extends AgentHandler {
     );
 
     // Respect workspace MCP server permissions when workspace override is enabled
-    const useWorkspaceOverride = this.#workspace?.overrideGlobalAgentSettings === true;
+    const useWorkspaceOverride =
+      this.#workspace?.overrideGlobalAgentSettings === true;
     const mcpServers = useWorkspaceOverride
       ? await new MCPCompatibilityLayer().activeMCPServers(this.#workspace.slug)
       : await new MCPCompatibilityLayer().activeMCPServers();
@@ -558,7 +559,7 @@ class EphemeralAgentHandler extends AgentHandler {
     chatMode = null,
   }) {
     if (this.#isAgentCommandInvocation({ message })) return true;
-    if (chatMode === "agent") return true;  // Our custom always-on agent mode
+    if (chatMode === "agent") return true; // Our custom always-on agent mode
     if (chatMode === "automatic") {
       if (!workspace) return false;
       if (await Workspace.supportsNativeToolCalling(workspace)) return true;

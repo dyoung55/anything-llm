@@ -192,7 +192,14 @@ async function aggregateUsageSeries(where) {
       where: { AND: [where, { id: { gt: lastId } }] },
       orderBy: { id: "asc" },
       take: BATCH_SIZE,
-      select: { id: true, createdAt: true, prompt: true, response: true, workspaceId: true, user_id: true },
+      select: {
+        id: true,
+        createdAt: true,
+        prompt: true,
+        response: true,
+        workspaceId: true,
+        user_id: true,
+      },
     });
 
     if (batch.length === 0) break;
@@ -333,7 +340,9 @@ async function fetchUsageRows(where, limit = 20, offset = 0) {
       userId: r.user_id,
       username: r.users?.username ?? r.externalUsernameReference ?? null,
       viaApi: r.api_session_id != null,
-      apiKeyDescription: r.apiKeyId ? (apiKeyDescriptions.get(r.apiKeyId) ?? null) : null,
+      apiKeyDescription: r.apiKeyId
+        ? apiKeyDescriptions.get(r.apiKeyId) ?? null
+        : null,
       promptTokens: tc.promptTokens,
       completionTokens: tc.completionTokens,
       totalTokens: tc.totalTokens,

@@ -71,7 +71,6 @@ const WorkspaceChats = {
       const chats = await prisma.workspace_chats.findMany({
         where: {
           workspaceId,
-          user_id: null,
           api_session_id: String(apiSessionId),
           thread_id: null,
         },
@@ -281,7 +280,8 @@ const WorkspaceChats = {
         data: {
           feedbackScore:
             feedbackScore === null ? null : Number(feedbackScore) === 1,
-          feedbackComment: feedbackScore === null ? null : (feedbackComment ?? null),
+          feedbackComment:
+            feedbackScore === null ? null : feedbackComment ?? null,
         },
       });
       return;

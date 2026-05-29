@@ -20,8 +20,7 @@ class FireworksAiLLM {
     this.className = "FireworksAiLLM";
 
     const apiKey = apiKeyOverride || process.env.FIREWORKS_AI_LLM_API_KEY;
-    if (!apiKey)
-      throw new Error("No FireworksAI API key was set.");
+    if (!apiKey) throw new Error("No FireworksAI API key was set.");
     const { OpenAI: OpenAIApi } = require("openai");
     this.openai = new OpenAIApi({
       baseURL: "https://api.fireworks.ai/inference/v1",

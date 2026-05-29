@@ -12,8 +12,7 @@ const { MODEL_MAP } = require("../modelMap");
 class SambaNovaLLM {
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const apiKey = apiKeyOverride || process.env.SAMBANOVA_LLM_API_KEY;
-    if (!apiKey)
-      throw new Error("No SambaNova API key was set.");
+    if (!apiKey) throw new Error("No SambaNova API key was set.");
     this.className = "SambaNovaLLM";
     const { OpenAI: OpenAIApi } = require("openai");
 

@@ -15,12 +15,23 @@ const oldWorkspaceSkillsPath =
 const newWorkspaceAgentConfigPath =
   process.env.NODE_ENV === "development"
     ? path.resolve(__dirname, "../../storage/plugins/workspace-agent-config")
-    : path.resolve(process.env.STORAGE_DIR, "plugins", "workspace-agent-config");
+    : path.resolve(
+        process.env.STORAGE_DIR,
+        "plugins",
+        "workspace-agent-config"
+      );
 
 const migrationFlagPath =
   process.env.NODE_ENV === "development"
-    ? path.resolve(__dirname, "../../storage/plugins/.workspace-agent-config-migrated")
-    : path.resolve(process.env.STORAGE_DIR, "plugins", ".workspace-agent-config-migrated");
+    ? path.resolve(
+        __dirname,
+        "../../storage/plugins/.workspace-agent-config-migrated"
+      )
+    : path.resolve(
+        process.env.STORAGE_DIR,
+        "plugins",
+        ".workspace-agent-config-migrated"
+      );
 
 /**
  * Migrate old workspace-specific MCP and skills configs to new format
@@ -29,7 +40,9 @@ const migrationFlagPath =
 async function migrateWorkspaceAgentConfig() {
   // Check if migration already ran
   if (fs.existsSync(migrationFlagPath)) {
-    console.log("[Migration] Workspace agent config migration already completed");
+    console.log(
+      "[Migration] Workspace agent config migration already completed"
+    );
     return;
   }
 

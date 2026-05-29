@@ -319,10 +319,10 @@ function workspaceAgentConfigEndpoints(app) {
 
         // Build static catalog of all configurable (opt-in) skills from AgentPlugins
         const ALL_CONFIGURABLE_SKILLS = [
-          AgentPlugins.rechart.name,          // "create-chart"
-          AgentPlugins.webBrowsing.name,      // "web-browsing"
-          AgentPlugins.sqlAgent.name,         // "sql-agent"
-          AgentPlugins.filesystemAgent.name,  // "filesystem-agent" (v1.12.0)
+          AgentPlugins.rechart.name, // "create-chart"
+          AgentPlugins.webBrowsing.name, // "web-browsing"
+          AgentPlugins.sqlAgent.name, // "sql-agent"
+          AgentPlugins.filesystemAgent.name, // "filesystem-agent" (v1.12.0)
           AgentPlugins.createFilesAgent.name, // "create-files-agent" (v1.12.0)
         ];
 

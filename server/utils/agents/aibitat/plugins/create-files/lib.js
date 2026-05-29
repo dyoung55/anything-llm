@@ -160,7 +160,12 @@ class CreateFilesManager {
       if (!pngBuffer || pngBuffer.length < 24) return null;
 
       // PNG magic bytes
-      if (pngBuffer[0] !== 0x89 || pngBuffer[1] !== 0x50 || pngBuffer[2] !== 0x4e || pngBuffer[3] !== 0x47) {
+      if (
+        pngBuffer[0] !== 0x89 ||
+        pngBuffer[1] !== 0x50 ||
+        pngBuffer[2] !== 0x4e ||
+        pngBuffer[3] !== 0x47
+      ) {
         return null;
       }
 
@@ -310,7 +315,9 @@ class CreateFilesManager {
       // Get the custom logo filename from system settings
       let logoFilename = null;
       if (forDarkBackground) {
-        const setting = await SystemSettings.get({ label: "logo_filename_light" });
+        const setting = await SystemSettings.get({
+          label: "logo_filename_light",
+        });
         logoFilename = setting?.value;
       } else {
         const setting = await SystemSettings.get({ label: "logo_filename" });

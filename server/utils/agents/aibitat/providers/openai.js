@@ -119,7 +119,7 @@ class OpenAIProvider extends Provider {
    */
   #formatAttachments(attachments = []) {
     if (!attachments || !attachments.length) return [];
-    
+
     return attachments.map((attachment) => ({
       type: "input_image",
       image_url: attachment.contentString,

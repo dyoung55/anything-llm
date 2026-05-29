@@ -13,7 +13,8 @@ class PrivatemodelProvider extends InheritMultiple([Provider, UnTooled]) {
   model;
 
   constructor(config = {}) {
-    const { model = process.env.PRIVATEMODE_LLM_MODEL_PREF, apiKey = null } = config;
+    const { model = process.env.PRIVATEMODE_LLM_MODEL_PREF, apiKey = null } =
+      config;
     super();
     const client = new OpenAI({
       baseURL: PrivatemodeLLM.parseBasePath(

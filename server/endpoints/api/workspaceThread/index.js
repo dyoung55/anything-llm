@@ -387,6 +387,7 @@ function apiWorkspaceThreadEndpoints(app) {
           message,
           mode = null,
           userId,
+          username = null,
           attachments = [],
           reset = false,
         } = reqBody(request);
@@ -426,15 +427,23 @@ function apiWorkspaceThreadEndpoints(app) {
           return;
         }
 
-        const user = userId ? await User.get({ id: Number(userId) }) : null;
+        const resolvedUser = userId
+          ? await User.get({ id: Number(userId) })
+          : null;
+        const attributedUser = username
+          ? await User.get({ username: String(username) })
+          : null;
+        const apiKeyId = response.locals.apiKey?.id ?? null;
         const result = await ApiChatHandler.chatSync({
           workspace,
           message,
           mode: resolvedMode,
-          user,
+          user: attributedUser ?? resolvedUser,
           thread,
           attachments,
           reset,
+          externalUsernameReference: username ? String(username) : null,
+          apiKeyId,
         });
         await Telemetry.sendTelemetry("sent_chat", {
           LLMSelection: process.env.LLM_PROVIDER || "openai",
@@ -447,7 +456,7 @@ function apiWorkspaceThreadEndpoints(app) {
           workspaceName: workspace?.name,
           chatModel: workspace?.chatModel || "System Default",
           threadName: thread?.name,
-          userId: user?.id,
+          userId: (attributedUser ?? resolvedUser)?.id,
         });
         response.status(200).json({ ...result });
       } catch (e) {
@@ -559,6 +568,7 @@ function apiWorkspaceThreadEndpoints(app) {
           message,
           mode = null,
           userId,
+          username = null,
           attachments = [],
           reset = false,
         } = reqBody(request);
@@ -598,7 +608,13 @@ function apiWorkspaceThreadEndpoints(app) {
           return;
         }
 
-        const user = userId ? await User.get({ id: Number(userId) }) : null;
+        const resolvedUser = userId
+          ? await User.get({ id: Number(userId) })
+          : null;
+        const attributedUser = username
+          ? await User.get({ username: String(username) })
+          : null;
+        const apiKeyId = response.locals.apiKey?.id ?? null;
 
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Type", "text/event-stream");
@@ -611,10 +627,12 @@ function apiWorkspaceThreadEndpoints(app) {
           workspace,
           message,
           mode: resolvedMode,
-          user,
+          user: attributedUser ?? resolvedUser,
           thread,
           attachments,
           reset,
+          externalUsernameReference: username ? String(username) : null,
+          apiKeyId,
         });
         await Telemetry.sendTelemetry("sent_chat", {
           LLMSelection: process.env.LLM_PROVIDER || "openai",
@@ -627,7 +645,7 @@ function apiWorkspaceThreadEndpoints(app) {
           workspaceName: workspace?.name,
           chatModel: workspace?.chatModel || "System Default",
           threadName: thread?.name,
-          userId: user?.id,
+          userId: (attributedUser ?? resolvedUser)?.id,
         });
         response.end();
       } catch (e) {

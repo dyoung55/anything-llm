@@ -621,11 +621,13 @@ function adminEndpoints(app) {
           BackgroundService,
         } = require("../utils/BackgroundWorkers/index");
         const bgService = new BackgroundService();
+        let schedulerUpdated = false;
         if (bgService.bree) {
           await bgService.updateSiriusSync(!!enabled, cron || null);
+          schedulerUpdated = true;
         }
 
-        return response.status(200).json({ success: true });
+        return response.status(200).json({ success: true, schedulerUpdated });
       } catch (e) {
         console.error(e);
         response.sendStatus(500).end();

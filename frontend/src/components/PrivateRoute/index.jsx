@@ -20,7 +20,12 @@ function useIsAuthenticated() {
   useEffect(() => {
     const validateSession = async () => {
       const onboardingComplete = await System.isOnboardingComplete();
-      const keys = await System.keys();
+      let keys = await System.keys();
+      if (!keys) {
+        // Retry once after a short delay to handle transient server restarts
+        await new Promise((res) => setTimeout(res, 1500));
+        keys = await System.keys();
+      }
       if (!keys) {
         setIsAuthed(false);
         return;

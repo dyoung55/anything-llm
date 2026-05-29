@@ -1071,12 +1071,16 @@ function apiWorkspaceEndpoints(app) {
 
         // thumbs-down requires a comment
         if (feedback === false && !feedbackComment?.trim?.()) {
-          return response.status(400).json({ error: "feedbackComment is required for thumbs-down ratings." });
+          return response.status(400).json({
+            error: "feedbackComment is required for thumbs-down ratings.",
+          });
         }
 
         const workspace = await Workspace.get({ slug: String(slug) });
         if (!workspace) {
-          return response.status(404).json({ error: `Workspace ${slug} not found.` });
+          return response
+            .status(404)
+            .json({ error: `Workspace ${slug} not found.` });
         }
 
         // Verify the chat belongs to this workspace
@@ -1085,7 +1089,9 @@ function apiWorkspaceEndpoints(app) {
           workspaceId: workspace.id,
         });
         if (!chat) {
-          return response.status(404).json({ error: "Chat not found in this workspace." });
+          return response
+            .status(404)
+            .json({ error: "Chat not found in this workspace." });
         }
 
         await WorkspaceChats.updateFeedbackScore(

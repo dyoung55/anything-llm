@@ -6,7 +6,9 @@ const setupTelemetry = require("../telemetry");
 const eagerLoadContextWindows = require("./eagerLoadContextWindows");
 const markOnboarded = require("./markOnboarded");
 const { PushNotifications } = require("../PushNotifications");
-const { migrateWorkspaceAgentConfig } = require("../migrations/migrateWorkspaceAgentConfig");
+const {
+  migrateWorkspaceAgentConfig,
+} = require("../migrations/migrateWorkspaceAgentConfig");
 const { addUserProfileFields } = require("../migrations/addUserProfileFields");
 const { addApiKeyDescription } = require("../migrations/addApiKeyDescription");
 const { addFeedbackComment } = require("../migrations/addFeedbackComment");
@@ -41,11 +43,11 @@ function bootSSL(app, port = 3001) {
         await markOnboarded();
         await setupTelemetry();
         await migrateWorkspaceAgentConfig();
-      await addUserProfileFields();
-      await addApiKeyDescription();
-      await addFeedbackComment();
-      await addAgentAlwaysOnRag();
-      await addChatEnhancements();
+        await addUserProfileFields();
+        await addApiKeyDescription();
+        await addFeedbackComment();
+        await addAgentAlwaysOnRag();
+        await addChatEnhancements();
         new CommunicationKey(true);
         new EncryptionManager();
         new BackgroundService().boot();

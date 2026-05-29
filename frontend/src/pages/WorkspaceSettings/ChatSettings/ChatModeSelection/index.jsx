@@ -66,13 +66,13 @@ export default function ChatModeSelection({ workspace, setHasChanges }) {
           </button>
         </div>
         <ChatModeExplanation chatMode={chatMode} />
+        <input
+          type="hidden"
+          name="agentAlwaysOnRag"
+          value={String(agentAlwaysOnRag)}
+        />
         {chatMode === "agent" && (
           <div className="mt-4">
-            <input
-              type="hidden"
-              name="agentAlwaysOnRag"
-              value={String(agentAlwaysOnRag)}
-            />
             <Toggle
               label="Always search workspace documents"
               description="Automatically query the workspace vector database on every message, in addition to agent tools."

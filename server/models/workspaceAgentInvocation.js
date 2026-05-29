@@ -28,7 +28,13 @@ const WorkspaceAgentInvocation = {
     } catch {}
   },
 
-  new: async function ({ prompt, workspace, user = null, thread = null, attachments = [] }) {
+  new: async function ({
+    prompt,
+    workspace,
+    user = null,
+    thread = null,
+    attachments = [],
+  }) {
     try {
       const invocation = await prisma.workspace_agent_invocations.create({
         data: {

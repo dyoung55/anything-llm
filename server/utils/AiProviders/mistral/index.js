@@ -10,8 +10,7 @@ const {
 class MistralLLM {
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const apiKey = apiKeyOverride || process.env.MISTRAL_API_KEY;
-    if (!apiKey)
-      throw new Error("No Mistral API key was set.");
+    if (!apiKey) throw new Error("No Mistral API key was set.");
 
     this.className = "MistralLLM";
     const { OpenAI: OpenAIApi } = require("openai");

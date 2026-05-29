@@ -252,7 +252,12 @@ module.exports.CreatePptxPresentation = {
 
               // Title slide
               const titleSlide = pptx.addSlide();
-              await renderTitleSlide(titleSlide, pptx, { title, author }, theme);
+              await renderTitleSlide(
+                titleSlide,
+                pptx,
+                { title, author },
+                theme
+              );
 
               // Render every slide produced by the section agents
               for (let index = 0; index < allSlides.length; index++) {

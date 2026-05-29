@@ -40,8 +40,11 @@ async function currentLogoFilenameLight() {
   }
 }
 
-async function determineLogoFilepath(defaultFilename = LOGO_FILENAME, isLightMode = false) {
-  const currentLogoFilename = isLightMode 
+async function determineLogoFilepath(
+  defaultFilename = LOGO_FILENAME,
+  isLightMode = false
+) {
+  const currentLogoFilename = isLightMode
     ? await currentLogoFilenameLight()
     : await SystemSettings.currentLogoFilename();
   const basePath = process.env.STORAGE_DIR

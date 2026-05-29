@@ -11,7 +11,12 @@
  * @param {number} maxHeight - Maximum desired height
  * @returns {{width: number, height: number}} Scaled dimensions
  */
-function scaleImageMaintainingAspectRatio(originalWidth, originalHeight, maxWidth, maxHeight) {
+function scaleImageMaintainingAspectRatio(
+  originalWidth,
+  originalHeight,
+  maxWidth,
+  maxHeight
+) {
   const widthRatio = maxWidth / originalWidth;
   const heightRatio = maxHeight / originalHeight;
   const scale = Math.min(widthRatio, heightRatio);
@@ -794,7 +799,16 @@ function createCoverPageSection(docx, options) {
   const { Paragraph, TextRun, AlignmentType, Footer, ImageRun, SectionType } =
     docx;
 
-  const { title, subtitle, author, date, theme, margins, logoBuffer, logoDimensions } = options;
+  const {
+    title,
+    subtitle,
+    author,
+    date,
+    theme,
+    margins,
+    logoBuffer,
+    logoDimensions,
+  } = options;
 
   const coverChildren = [];
 

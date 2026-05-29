@@ -20,8 +20,7 @@ const cacheFolder = path.resolve(
 class GiteeAILLM {
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const apiKey = apiKeyOverride || process.env.GITEE_AI_API_KEY;
-    if (!apiKey)
-      throw new Error("No Gitee AI API key was set.");
+    if (!apiKey) throw new Error("No Gitee AI API key was set.");
     const { OpenAI: OpenAIApi } = require("openai");
 
     this.className = "GiteeAILLM";

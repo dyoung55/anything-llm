@@ -27,8 +27,7 @@ const NO_SYSTEM_PROMPT_MODELS = [
 class GeminiLLM {
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const apiKey = apiKeyOverride || process.env.GEMINI_API_KEY;
-    if (!apiKey)
-      throw new Error("No Gemini API key was set.");
+    if (!apiKey) throw new Error("No Gemini API key was set.");
 
     this.className = "GeminiLLM";
     const { OpenAI: OpenAIApi } = require("openai");

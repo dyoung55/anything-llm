@@ -507,8 +507,10 @@ class MCPHypervisor {
     const alreadyRunning = Object.keys(this.mcps);
 
     // If all servers are already running, skip boot
-    if (alreadyRunning.length === serverDefinitions.length &&
-        serverDefinitions.every(def => alreadyRunning.includes(def.name))) {
+    if (
+      alreadyRunning.length === serverDefinitions.length &&
+      serverDefinitions.every((def) => alreadyRunning.includes(def.name))
+    ) {
       this.log("All MCP servers already running, skipping boot.");
       return this.mcpLoadingResults;
     }
@@ -633,9 +635,15 @@ class MCPHypervisor {
   async #attemptBackgroundReconnect(name, server) {
     try {
       this.log(`[Background Health Check] Retrying MCP server: ${name}`);
-      const mcp = new (require("@modelcontextprotocol/sdk/client/index.js"))
-        .Client({ name: name, version: "1.0.0" });
-      const transport = await this.#setupServerTransport(server, this.#getServerType(server));
+      const mcp =
+        new (require("@modelcontextprotocol/sdk/client/index.js").Client)({
+          name: name,
+          version: "1.0.0",
+        });
+      const transport = await this.#setupServerTransport(
+        server,
+        this.#getServerType(server)
+      );
 
       // Set up event handlers
       transport.onclose = () => this.log(`${name} - Transport closed`);
@@ -670,7 +678,10 @@ class MCPHypervisor {
     } catch (error) {
       // Log the failure but don't update mcpLoadingResults on background retries
       // (keep the original error message for the user to see)
-      this.log(`[Background Health Check] Failed to reconnect ${name}:`, error.message);
+      this.log(
+        `[Background Health Check] Failed to reconnect ${name}:`,
+        error.message
+      );
     }
   }
 

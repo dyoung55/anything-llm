@@ -13,8 +13,7 @@ class AzureOpenAiLLM {
     if (!process.env.AZURE_OPENAI_ENDPOINT)
       throw new Error("No Azure API endpoint was set.");
     const apiKey = apiKeyOverride || process.env.AZURE_OPENAI_KEY;
-    if (!apiKey)
-      throw new Error("No Azure API key was set.");
+    if (!apiKey) throw new Error("No Azure API key was set.");
 
     this.className = "AzureOpenAiLLM";
     this.openai = new OpenAI({

@@ -22,8 +22,7 @@ class CometApiLLM {
   defaultTimeout = 3_000;
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const apiKey = apiKeyOverride || process.env.COMETAPI_LLM_API_KEY;
-    if (!apiKey)
-      throw new Error("No CometAPI API key was set.");
+    if (!apiKey) throw new Error("No CometAPI API key was set.");
 
     this.className = "CometApiLLM";
     const { OpenAI: OpenAIApi } = require("openai");

@@ -45,7 +45,7 @@ class AWSBedrockLLM {
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     // Store the API key override for later use
     this.apiKeyOverride = apiKeyOverride;
-    
+
     const requiredEnvVars = [
       ...(!["iam_role", "apiKey"].includes(this.authMethod)
         ? [

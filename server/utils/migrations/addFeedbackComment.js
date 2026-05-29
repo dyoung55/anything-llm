@@ -10,7 +10,9 @@ const migrationFlagPath =
 async function addFeedbackComment() {
   if (fs.existsSync(migrationFlagPath)) return;
 
-  console.log("[Migration] Adding feedbackComment column to workspace_chats...");
+  console.log(
+    "[Migration] Adding feedbackComment column to workspace_chats..."
+  );
   try {
     await prisma.$executeRawUnsafe(
       `ALTER TABLE "workspace_chats" ADD COLUMN "feedbackComment" TEXT`

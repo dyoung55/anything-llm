@@ -131,7 +131,8 @@ function mcpServersEndpoints(app) {
         if (!config || typeof config !== "object" || !config.mcpServers) {
           return response.status(400).json({
             success: false,
-            error: "Invalid configuration format. Expected { mcpServers: {...} }",
+            error:
+              "Invalid configuration format. Expected { mcpServers: {...} }",
           });
         }
 
@@ -152,7 +153,8 @@ function mcpServersEndpoints(app) {
 
         return response.status(200).json({
           success: true,
-          message: "MCP configuration saved. Servers are reloading in the background.",
+          message:
+            "MCP configuration saved. Servers are reloading in the background.",
         });
       } catch (error) {
         console.error("Error updating MCP config:", error);

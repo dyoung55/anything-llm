@@ -16,7 +16,7 @@ class UnTooled {
    */
   #formatAttachments(attachments = []) {
     if (!attachments || !attachments.length) return [];
-    
+
     return attachments.map((attachment) => ({
       type: "image_url",
       image_url: {
@@ -191,7 +191,10 @@ ${JSON.stringify(def.parameters.properties, null, 4)}\n`;
     );
     if (history[history.length - 1].role !== "user") return null;
     const formattedHistory = this.#formatMessagesWithAttachments(history);
-    const historyMessages = this.buildToolCallMessages(formattedHistory, functions);
+    const historyMessages = this.buildToolCallMessages(
+      formattedHistory,
+      functions
+    );
     const response = await chatCb({ messages: historyMessages });
 
     const call = safeJsonParse(response, null);
@@ -229,7 +232,10 @@ ${JSON.stringify(def.parameters.properties, null, 4)}\n`;
     const msgUUID = v4();
     let textResponse = "";
     const formattedHistory = this.#formatMessagesWithAttachments(history);
-    const historyMessages = this.buildToolCallMessages(formattedHistory, functions);
+    const historyMessages = this.buildToolCallMessages(
+      formattedHistory,
+      functions
+    );
     const stream = await chatCb({ messages: historyMessages });
 
     eventHandler?.("reportStreamEvent", {

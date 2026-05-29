@@ -675,7 +675,10 @@ function systemEndpoints(app) {
         !request?.query?.theme || request?.query?.theme === "default";
       const isLightMode = request?.query?.theme === "light";
       const defaultFilename = getDefaultFilename(darkMode);
-      const logoPath = await determineLogoFilepath(defaultFilename, isLightMode);
+      const logoPath = await determineLogoFilepath(
+        defaultFilename,
+        isLightMode
+      );
       const { found, buffer, size, mime } = fetchLogo(logoPath);
 
       if (!found) {
@@ -753,8 +756,8 @@ function systemEndpoints(app) {
   app.get("/system/banner-settings", async (_, response) => {
     try {
       const enabled =
-        (await SystemSettings.get({ label: "custom_banner_enabled" }))?.value ===
-        "true";
+        (await SystemSettings.get({ label: "custom_banner_enabled" }))
+          ?.value === "true";
       const text =
         (await SystemSettings.get({ label: "custom_banner_text" }))?.value ??
         null;
@@ -1468,7 +1471,7 @@ function systemEndpoints(app) {
 
   app.get(
     "/system/usage-analytics/chat/:chatId",
-    usageAnalyticsMiddleware,
+    [chatHistoryViewable, validatedRequest, flexUserRoleValid([ROLES.admin])],
     async (request, response) => {
       try {
         const { chatId } = request.params;
@@ -1503,7 +1506,9 @@ function systemEndpoints(app) {
           });
           return;
         }
-        response.status(200).json({ series: result.series, totals: result.totals });
+        response
+          .status(200)
+          .json({ series: result.series, totals: result.totals });
       } catch (e) {
         console.error(e);
         response.sendStatus(500).end();
@@ -1552,8 +1557,10 @@ function systemEndpoints(app) {
         updates.username = User.validations.username(String(username));
       if (password) updates.password = String(password);
       if (bio) updates.bio = String(bio);
-      if (language) updates.language = User.validations.language(String(language));
-      if (timezone) updates.timezone = User.validations.timezone(String(timezone));
+      if (language)
+        updates.language = User.validations.language(String(language));
+      if (timezone)
+        updates.timezone = User.validations.timezone(String(timezone));
 
       if (Object.keys(updates).length === 0) {
         response
@@ -1720,9 +1727,9 @@ function systemEndpoints(app) {
       try {
         const { name, prompt, exampleResponse } = reqBody(request);
         if (!name || !prompt || !exampleResponse) {
-          return response
-            .status(400)
-            .json({ message: "Name, Prompt, and Example Response are required" });
+          return response.status(400).json({
+            message: "Name, Prompt, and Example Response are required",
+          });
         }
 
         const user = await userFromSession(request, response);

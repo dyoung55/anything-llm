@@ -1,8 +1,8 @@
 const { WorkspaceChats } = require("../../../../models/workspaceChats");
-const { WorkspaceChatToolCalls } = require("../../../../models/workspaceChatToolCalls");
 const {
-  packAgentContentToPlainText,
-} = require("../../agentMessageContent");
+  WorkspaceChatToolCalls,
+} = require("../../../../models/workspaceChatToolCalls");
+const { packAgentContentToPlainText } = require("../../agentMessageContent");
 
 /**
  * Plugin to save chat history to AnythingLLM DB.
@@ -115,9 +115,13 @@ const chatHistory = {
           user: { id: invocation?.user_id || null },
           threadId: invocation?.thread_id || null,
         });
-        const toolCallHistorySpecial = aibitat.provider?.getToolCallHistory?.() ?? [];
+        const toolCallHistorySpecial =
+          aibitat.provider?.getToolCallHistory?.() ?? [];
         if (chat?.id && toolCallHistorySpecial.length > 0) {
-          await WorkspaceChatToolCalls.bulkCreate(chat.id, toolCallHistorySpecial);
+          await WorkspaceChatToolCalls.bulkCreate(
+            chat.id,
+            toolCallHistorySpecial
+          );
         }
         if (chat?.id && aibitat._lastAssistantStreamUuid) {
           aibitat.socket?.send?.("reportStreamEvent", {

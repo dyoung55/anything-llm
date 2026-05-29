@@ -34,7 +34,9 @@ const { agentFlowEndpoints } = require("./endpoints/agentFlows");
 const { mcpServersEndpoints } = require("./endpoints/mcpServers");
 const { mobileEndpoints } = require("./endpoints/mobile");
 const { webPushEndpoints } = require("./endpoints/webPush");
-const { workspaceAgentConfigEndpoints } = require("./endpoints/workspaceAgentConfig");
+const {
+  workspaceAgentConfigEndpoints,
+} = require("./endpoints/workspaceAgentConfig");
 const { telegramEndpoints } = require("./endpoints/telegram");
 const { httpLogger } = require("./middleware/httpLogger");
 const app = express();

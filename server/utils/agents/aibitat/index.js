@@ -1288,31 +1288,52 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
       case "groq":
         return new Providers.GroqProvider({ model: config.model, apiKey });
       case "togetherai":
-        return new Providers.TogetherAIProvider({ model: config.model, apiKey });
+        return new Providers.TogetherAIProvider({
+          model: config.model,
+          apiKey,
+        });
       case "azure":
-        return new Providers.AzureOpenAiProvider({ model: config.model, apiKey });
+        return new Providers.AzureOpenAiProvider({
+          model: config.model,
+          apiKey,
+        });
       case "koboldcpp":
         return new Providers.KoboldCPPProvider({ apiKey });
       case "localai":
         return new Providers.LocalAIProvider({ model: config.model, apiKey });
       case "openrouter":
-        return new Providers.OpenRouterProvider({ model: config.model, apiKey });
+        return new Providers.OpenRouterProvider({
+          model: config.model,
+          apiKey,
+        });
       case "mistral":
         return new Providers.MistralProvider({ model: config.model, apiKey });
       case "generic-openai":
-        return new Providers.GenericOpenAiProvider({ model: config.model, apiKey });
+        return new Providers.GenericOpenAiProvider({
+          model: config.model,
+          apiKey,
+        });
       case "perplexity":
-        return new Providers.PerplexityProvider({ model: config.model, apiKey });
+        return new Providers.PerplexityProvider({
+          model: config.model,
+          apiKey,
+        });
       case "textgenwebui":
         return new Providers.TextWebGenUiProvider({ apiKey });
       case "bedrock":
         return new Providers.AWSBedrockProvider({ apiKey });
       case "fireworksai":
-        return new Providers.FireworksAIProvider({ model: config.model, apiKey });
+        return new Providers.FireworksAIProvider({
+          model: config.model,
+          apiKey,
+        });
       case "nvidia-nim":
         return new Providers.NvidiaNimProvider({ model: config.model, apiKey });
       case "moonshotai":
-        return new Providers.MoonshotAiProvider({ model: config.model, apiKey });
+        return new Providers.MoonshotAiProvider({
+          model: config.model,
+          apiKey,
+        });
       case "deepseek":
         return new Providers.DeepSeekProvider({ model: config.model, apiKey });
       case "litellm":
@@ -1330,7 +1351,10 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
       case "gemini":
         return new Providers.GeminiProvider({ model: config.model, apiKey });
       case "dpais":
-        return new Providers.DellProAiStudioProvider({ model: config.model, apiKey });
+        return new Providers.DellProAiStudioProvider({
+          model: config.model,
+          apiKey,
+        });
       case "cometapi":
         return new Providers.CometApiProvider({ model: config.model, apiKey });
       case "foundry":
@@ -1340,9 +1364,15 @@ https://docs.anythingllm.com/agent/intelligent-tool-selection
       case "cohere":
         return new Providers.CohereProvider({ model: config.model, apiKey });
       case "docker-model-runner":
-        return new Providers.DockerModelRunnerProvider({ model: config.model, apiKey });
+        return new Providers.DockerModelRunnerProvider({
+          model: config.model,
+          apiKey,
+        });
       case "privatemode":
-        return new Providers.PrivatemodeProvider({ model: config.model, apiKey });
+        return new Providers.PrivatemodeProvider({
+          model: config.model,
+          apiKey,
+        });
       case "sambanova":
         return new Providers.SambaNovaProvider({ model: config.model });
       case "lemonade":

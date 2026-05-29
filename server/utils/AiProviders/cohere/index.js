@@ -11,8 +11,7 @@ class CohereLLM {
     this.className = "CohereLLM";
     const { CohereClient } = require("cohere-ai");
     const apiKey = apiKeyOverride || process.env.COHERE_API_KEY;
-    if (!apiKey)
-      throw new Error("No Cohere API key was set.");
+    if (!apiKey) throw new Error("No Cohere API key was set.");
 
     const cohere = new CohereClient({
       token: apiKey,

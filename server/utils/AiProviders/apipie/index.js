@@ -21,8 +21,7 @@ const cacheFolder = path.resolve(
 class ApiPieLLM {
   constructor(embedder = null, modelPreference = null, apiKeyOverride = null) {
     const apiKey = apiKeyOverride || process.env.APIPIE_LLM_API_KEY;
-    if (!apiKey)
-      throw new Error("No ApiPie LLM API key was set.");
+    if (!apiKey) throw new Error("No ApiPie LLM API key was set.");
 
     this.className = "ApiPieLLM";
     const { OpenAI: OpenAIApi } = require("openai");

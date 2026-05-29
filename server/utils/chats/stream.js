@@ -90,6 +90,7 @@ async function streamChatWithWorkspace(
       attachments,
       close: true,
       error: null,
+      usage: buildUsageBlock({}, []),
     });
     await WorkspaceChats.new({
       workspaceId: workspace.id,
@@ -189,6 +190,7 @@ async function streamChatWithWorkspace(
       sources: [],
       close: true,
       error: vectorSearchResults.message,
+      usage: buildUsageBlock({}, []),
     });
     return;
   }
@@ -224,6 +226,7 @@ async function streamChatWithWorkspace(
       sources: [],
       close: true,
       error: null,
+      usage: buildUsageBlock({}, []),
     });
 
     await WorkspaceChats.new({
@@ -277,6 +280,7 @@ async function streamChatWithWorkspace(
       close: true,
       error: false,
       metrics,
+      usage: buildUsageBlock(metrics, []),
     });
   } else {
     const stream = await LLMConnector.streamGetChatCompletion(messages, {

@@ -62,9 +62,7 @@ async function syncSiriusUsers() {
 
     return { success, status, responseBody };
   } catch (e) {
-    console.error(
-      `[SiriusSync] ${timestamp} | Network error: ${e.message}`
-    );
+    console.error(`[SiriusSync] ${timestamp} | Network error: ${e.message}`);
     await EventLogs.logEvent("sirius_user_sync_failed", {
       timestamp,
       status,

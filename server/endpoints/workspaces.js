@@ -506,7 +506,11 @@ function workspaceEndpoints(app) {
         });
 
         if (!existingChat) return response.status(404).json({ success: false });
-        await WorkspaceChats.updateFeedbackScore(chatId, feedback, feedbackComment);
+        await WorkspaceChats.updateFeedbackScore(
+          chatId,
+          feedback,
+          feedbackComment
+        );
         return response.status(200).json({ success: true });
       } catch (error) {
         console.error("Error updating chat feedback:", error);

@@ -455,8 +455,9 @@ class AgentHandler {
       throw new Error("This agent invocation is already closed");
     this.invocation = invocation ?? null;
     if (this.invocation) {
-      const cachedAttachments =
-        WorkspaceAgentInvocation.getAndClearAttachments(this.invocation.uuid);
+      const cachedAttachments = WorkspaceAgentInvocation.getAndClearAttachments(
+        this.invocation.uuid
+      );
       if (cachedAttachments?.length > 0) {
         this.invocation.attachments = cachedAttachments;
       }

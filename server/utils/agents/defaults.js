@@ -43,7 +43,8 @@ const WORKSPACE_AGENT = {
     });
 
     // Check if workspace has override enabled for agent settings
-    const useWorkspaceOverride = workspace?.overrideGlobalAgentSettings === true;
+    const useWorkspaceOverride =
+      workspace?.overrideGlobalAgentSettings === true;
 
     let skills = [];
     let mcpServers = [];
@@ -51,7 +52,9 @@ const WORKSPACE_AGENT = {
     if (useWorkspaceOverride && workspace?.slug) {
       // Use workspace-specific configuration (filtered from global)
       skills = await WorkspaceAgentConfig.getEnabledSkills(workspace.slug);
-      mcpServers = await new MCPCompatibilityLayer().activeMCPServers(workspace.slug);
+      mcpServers = await new MCPCompatibilityLayer().activeMCPServers(
+        workspace.slug
+      );
     } else {
       // Use global configuration
       skills = await agentSkillsFromSystemSettings();
